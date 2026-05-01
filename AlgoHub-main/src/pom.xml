@@ -8,10 +8,10 @@
 		<version>4.0.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>io.github.junkfood24</groupId>
-	<artifactId>login</artifactId>
+	<groupId>io.github.algohub</groupId>
+	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>login</name>
+	<name>backend</name>
 	<description/>
 	<url/>
 	<licenses>

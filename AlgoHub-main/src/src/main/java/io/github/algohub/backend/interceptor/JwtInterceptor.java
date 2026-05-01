@@ -1,8 +1,8 @@
-package backend.interceptor;
+package io.github.algohub.backend.interceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import backend.common.Result;
-import backend.util.JwtUtil;
+import io.github.algohub.backend.common.Result;
+import io.github.algohub.backend.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

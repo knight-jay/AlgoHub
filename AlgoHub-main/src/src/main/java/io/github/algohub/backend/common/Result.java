@@ -1,4 +1,4 @@
-package backend.common;
+package io.github.algohub.backend.common;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package backend.entity;
+package io.github.algohub.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;

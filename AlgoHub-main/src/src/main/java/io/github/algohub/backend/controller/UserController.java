@@ -1,10 +1,10 @@
-package backend.controller;
+package io.github.algohub.backend.controller;
 
-import backend.common.Result;
-import backend.dto.LoginDTO;
-import backend.dto.LoginResponseDTO;
-import backend.dto.RegisterDTO;
-import backend.service.UserService;
+import io.github.algohub.backend.common.Result;
+import io.github.algohub.backend.dto.LoginDTO;
+import io.github.algohub.backend.dto.LoginResponseDTO;
+import io.github.algohub.backend.dto.RegisterDTO;
+import io.github.algohub.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

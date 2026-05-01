@@ -1,4 +1,4 @@
-package backend;
+package io.github.algohub.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

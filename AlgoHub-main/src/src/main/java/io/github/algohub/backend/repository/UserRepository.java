@@ -1,6 +1,6 @@
-package backend.repository;
+package io.github.algohub.backend.repository;
 
-import backend.entity.User;
+import io.github.algohub.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {

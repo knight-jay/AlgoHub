@@ -1,13 +1,13 @@
-package backend.service.impl;
+package io.github.algohub.backend.service.impl;
 
-import backend.common.Result;
-import backend.dto.LoginDTO;
-import backend.dto.LoginResponseDTO;
-import backend.dto.RegisterDTO;
-import backend.entity.User;
-import backend.repository.UserRepository;
-import backend.service.UserService;
-import backend.util.JwtUtil;
+import io.github.algohub.backend.common.Result;
+import io.github.algohub.backend.dto.LoginDTO;
+import io.github.algohub.backend.dto.LoginResponseDTO;
+import io.github.algohub.backend.dto.RegisterDTO;
+import io.github.algohub.backend.entity.User;
+import io.github.algohub.backend.repository.UserRepository;
+import io.github.algohub.backend.service.UserService;
+import io.github.algohub.backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;

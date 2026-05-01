@@ -1,4 +1,4 @@
-package backend.util;
+package io.github.algohub.backend.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

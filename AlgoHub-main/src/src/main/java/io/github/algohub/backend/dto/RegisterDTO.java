@@ -1,4 +1,4 @@
-package backend.dto;
+package io.github.algohub.backend.dto;
 
 import lombok.Data;
 

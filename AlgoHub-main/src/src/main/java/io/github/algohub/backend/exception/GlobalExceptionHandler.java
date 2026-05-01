@@ -1,6 +1,6 @@
-package backend.exception;
+package io.github.algohub.backend.exception;
 
-import backend.common.Result;
+import io.github.algohub.backend.common.Result;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
