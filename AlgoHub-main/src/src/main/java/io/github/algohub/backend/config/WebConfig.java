@@ -19,8 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     "/api/user/login",
                     "/api/user/register",
-                    "/api/algorithm/**",        // 算法知识库公开
-                    "/api/admin/algorithm/**"    // 算法管理端也先排除，由Controller内部做角色校验
+                    "/api/algorithm/**"          // 算法知识库公开浏览
                 );
     }
 }
