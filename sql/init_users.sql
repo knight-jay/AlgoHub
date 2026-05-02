@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
     `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `username` VARCHAR(20) NOT NULL COMMENT '用户名，唯一，3-20位字母数字下划线',
-    `password` VARCHAR(255) NOT NULL COMMENT '密码（明文存储，仅示例）',
+    `password` VARCHAR(255) NOT NULL COMMENT '密码',
     `phone` VARCHAR(11) NOT NULL COMMENT '手机号，唯一，11位数字',
     `nickname` VARCHAR(255) DEFAULT NULL COMMENT '昵称',
     `avatar` VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
