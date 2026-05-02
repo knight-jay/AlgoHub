@@ -47,10 +47,10 @@ public class UserServiceImpl implements UserService {
             return Result.error("两次输入的密码不一致");
         }
         // 4. 校验手机号（简单正则）
-        String phoneRegex = "^1[3-9]\\d{9}$";
-        if (!Pattern.matches(phoneRegex, phone)) {
-            return Result.error("手机号格式不正确");
-        }
+        String phoneRegex = "^\\d{11}$";  // 只限制长度为11位数字
+if (!Pattern.matches(phoneRegex, phone)) {
+    return Result.error("手机号格式不正确");
+}
         // 5. 校验用户名/手机号是否已存在
         if (userRepo.findByUsername(username) != null) {
             return Result.error("用户名已存在");
@@ -58,10 +58,7 @@ public class UserServiceImpl implements UserService {
         if (userRepo.findByPhone(phone) != null) {
             return Result.error("手机号已被注册");
         }
-        // 6. 管理员角色校验（限制：仅手机号以100开头可注册管理员，防止恶意注册）
-        if ("ADMIN".equals(role) && !phone.startsWith("100")) {
-            return Result.error("无管理员注册权限，请联系系统管理员");
-        }
+      
         // 7. 角色合法性校验
         if (!"STUDENT".equals(role) && !"ADMIN".equals(role)) {
             return Result.error("角色只能是学生(STUDENT)或管理员(ADMIN)");
