@@ -28,9 +28,6 @@ public class User {
     // 昵称
     private String nickname;
 
-    // 头像地址
-    private String avatar;
-
     // 个人简介
     private String intro;
 

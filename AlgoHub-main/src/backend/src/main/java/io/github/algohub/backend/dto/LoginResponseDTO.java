@@ -14,6 +14,5 @@ public class LoginResponseDTO {
     public static class UserInfoDTO {
         private String username;
         private String role;
-        private String avatar;
     }
 }

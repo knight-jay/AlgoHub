@@ -11,7 +11,6 @@ export interface User {
   username: string
   phone: string
   nickname?: string
-  avatar?: string
   intro?: string
   role: 'STUDENT' | 'ADMIN'
   locked: number
@@ -25,7 +24,6 @@ export interface LoginResponse {
   userInfo: {
     username: string
     role: string
-    avatar?: string
   }
 }
 
@@ -88,6 +86,5 @@ export interface ChangePasswordData {
 export interface UpdateProfileData {
   phone?: string
   nickname?: string
-  avatar?: string
   intro?: string
 }

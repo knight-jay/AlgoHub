@@ -32,7 +32,6 @@ public class AlgorithmCategory {
     @JoinColumn(name = "parent_id", insertable = false, updatable = false)
     private AlgorithmCategory parent;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC")
     private List<AlgorithmCategory> children;

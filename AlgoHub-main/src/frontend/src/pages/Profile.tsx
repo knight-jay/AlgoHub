@@ -10,7 +10,7 @@ export default function Profile() {
 
   // 编辑个人信息
   const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ phone: '', nickname: '', avatar: '', intro: '' })
+  const [editForm, setEditForm] = useState({ phone: '', nickname: '', intro: '' })
   const [editMsg, setEditMsg] = useState('')
 
   // 修改密码
@@ -30,7 +30,6 @@ export default function Profile() {
     setEditForm({
       phone: user.phone || '',
       nickname: user.nickname || '',
-      avatar: user.avatar || '',
       intro: user.intro || '',
     })
     setEditing(true)
@@ -108,10 +107,6 @@ export default function Profile() {
               <div>
                 <label style={{ display: 'block', marginBottom: 6, fontSize: 14, color: '#555' }}>昵称</label>
                 <input className="form-input" value={editForm.nickname} onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })} />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, color: '#555' }}>头像地址</label>
-                <input className="form-input" value={editForm.avatar} onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })} />
               </div>
             </div>
             <div style={{ marginTop: 16 }}>

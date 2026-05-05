@@ -105,8 +105,7 @@ public class UserServiceImpl implements UserService {
 
         LoginResponseDTO.UserInfoDTO userInfo = new LoginResponseDTO.UserInfoDTO(
                 user.getUsername(),
-                user.getRole(),
-                user.getAvatar()
+                user.getRole()
         );
         LoginResponseDTO response = new LoginResponseDTO(token, userInfo);
         return Result.success(response);
@@ -142,13 +141,6 @@ public class UserServiceImpl implements UserService {
             String nickname = dto.getNickname().trim();
             if (!nickname.equals(user.getNickname())) {
                 user.setNickname(nickname);
-                changed = true;
-            }
-        }
-        if (dto.getAvatar() != null) {
-            String avatar = dto.getAvatar().trim();
-            if (!avatar.equals(user.getAvatar())) {
-                user.setAvatar(avatar);
                 changed = true;
             }
         }
