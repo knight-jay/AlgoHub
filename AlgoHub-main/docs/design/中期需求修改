@@ -1,0 +1,306 @@
+算法学习一站式服务平台（中期调整需求文档）
+项目信息	详情
+文档版本	V1.1
+编写人	常宇杰（架构师）
+编写日期	2026年5月5日
+生效日期	2026年5月6日
+适用范围	项目第5-8天（技术栈迁移与模块补全阶段）全体开发、测试人员
+仓库地址	https://github.com/knight-jay/AlgoHub.git
+
+
+一、文档引言
+1.1 文档目的
+明确项目中期技术栈重大变更、已完成模块现状、剩余功能优先级及问题修复计划，统一团队对技术规范调整、功能缺口补全、安全整改的认知，指导前后端、测试人员同步开展工作，确保第8天完成技术栈迁移、核心功能补全与安全加固，输出稳定可用的V1.1基础版本，并为后续学习资源推荐、问答社区模块开发奠定新的技术规范基础。
+
+1.2 文档范围
+本文档覆盖已实现的用户系统和算法知识库模块的功能补全与问题修复，明确技术栈变更后的架构规范、开发流程、接口标准与数据库设计。同时说明学习资源推荐、问答社区模块的延期规划，但不包含后续模块的详细需求定义。
+
+1.3 中期阶段核心目标
+1. 完成全部技术栈迁移工作，确保全员掌握React、Spring Data JPA及自实现安全框架的基础使用
+2. 补全用户系统"找回密码"功能与算法知识库"知识点关联跳转"功能
+3. 完成所有安全问题整改，达到原V1.0文档安全要求
+4. 修复全部已知Bug，完成已实现模块的回归测试与集成测试
+5. 建立适配新技术栈的代码规范、接口规范与测试规范
+6. 输出可运行的稳定版本，打标签v1.1-stable
+
+二、总体需求概述
+2.1 项目背景与当前定位
+在AI替代基础编程任务的背景下，平台聚焦在校计算机专业大学生的算法学习需求。当前已完成用户系统与算法知识库的基础功能开发，但因技术栈调整、开发进度偏差及安全问题，需优先完成技术迁移与核心功能补全。后续将基于稳定的V1.1版本，逐步推进学习资源推荐与问答社区模块开发。
+
+2.2 非功能需求（整改后目标）
+需求类型	具体指标
+性能要求	登录/注册接口响应时间≤200ms；页面首屏加载时间≤1.5s；支持50人同时在线
+安全要求	用户密码BCrypt加密存储；自实现JWT令牌有效期24小时；敏感操作（修改密码）需二次验证；所有输入参数进行XSS过滤与SQL防注入
+兼容性要求	支持Chrome 90+、Edge 90+浏览器；1920×1080分辨率下界面无错乱
+可用性要求	核心流程（注册→登录→修改信息→找回密码→退出）成功率100%；算法知识库浏览与搜索成功率100%；无阻塞性Bug
+
+
+三、已实现模块功能现状与补全需求
+3.1 用户系统
+3.1.1 已实现功能
+1. 用户注册：支持用户名、密码、邮箱、手机号注册，默认分配"学生"角色，完成基础参数校验
+2. 用户登录：支持用户名/邮箱+密码登录，生成JWT令牌，实现"记住我"功能与账号锁定逻辑
+3. 个人信息管理：支持查看/修改昵称、头像、手机号、个人简介，支持修改登录密码
+4. 角色权限控制：实现"学生/管理员"基础角色划分，前端隐藏无权限入口，后端基础权限校验
+
+3.1.2 待补全功能：找回密码
+3.1.2.1 功能描述
+支持用户通过注册邮箱接收验证码，重置账号密码。
+3.1.2.2 业务规则
+1. 流程：输入用户名/邮箱→发送验证码→输入验证码→设置新密码→完成重置
+2. 验证码规则：6位数字，有效期5分钟，同一邮箱1分钟内只能发送1次
+3. 新密码需符合注册时的密码强度要求（6-20位，含字母+数字）
+4. 重置成功后，自动跳转至登录页面，提示"密码重置成功，请重新登录"
+3.1.2.3 异常处理
+1. 验证码错误：提示"验证码错误，请重新输入"
+2. 验证码过期：提示"验证码已过期，请重新获取"
+3. 邮箱未注册：提示"该邮箱未绑定任何账号"
+
+3.1.3 安全整改要求
+1. 密码加密方式：将当前MD5加密替换为BCrypt加密，已存在用户密码需批量迁移
+2. 新增XSS过滤：所有用户输入参数（用户名、昵称、个人简介等）进行XSS过滤
+3. 新增二次验证：修改密码操作需验证原密码，验证通过后方可更新
+4. 完善SQL防注入：基于JPA参数绑定机制，杜绝拼接SQL语句
+
+3.2 算法知识库
+3.2.1 已实现功能
+1. 知识点分类浏览：支持按数据结构、算法、数学等分类查看知识点
+2. 知识点详情展示：支持查看知识点的定义、原理、代码示例
+3. 关键词搜索：支持按关键词搜索知识点标题与内容
+
+3.2.2 待补全功能：知识点关联跳转
+3.2.2.1 功能描述
+在知识点详情页中，自动识别内容中提及的其他知识点，并生成可点击的跳转链接，点击后直接进入对应知识点详情页。
+3.2.2.2 业务规则
+1. 关联范围：仅关联已存在于知识库中的知识点
+2. 匹配规则：精确匹配知识点标题，不支持模糊匹配
+3. 展示样式：关联知识点以蓝色下划线字体展示，鼠标悬浮显示知识点简介
+4. 跳转逻辑：点击后在当前页面打开对应知识点详情，保留浏览历史
+
+四、技术架构与开发规范（重大变更）
+4.1 调整后技术架构（前后端分离）
+```
+前端展示层（React 18）
+    ↓ Fetch API（HTTP请求）
+后端服务层（SpringBoot 2.7 + 自实现JWT认证）
+    ↓ Spring Data JPA（数据持久化）
+数据层（MySQL 8.0）
+```
+
+前端：React 18、React Router v6、Context API（状态管理）、原生CSS（无组件库）
+后端：SpringBoot 2.7、自实现JWT认证与权限控制、Spring Data JPA、HikariCP、Maven
+工具链：Git+Gitee、IDEA、VS Code、Navicat（已砍掉：Apifox、Element Plus、Pinia）
+
+4.2 Git协作规范（保持不变）
+4.2.1 分支策略
+1. 主分支main：仅存放稳定可运行版本，禁止直接提交
+2. 开发分支dev：日常集成分支，所有功能分支从dev拉出
+3. 功能分支：feature/姓名-模块名，如feature/changyujie-user-reset-password
+4. 修复分支：bugfix/姓名-Bug编号，如bugfix/liyixuan-001-login-token
+4.2.2 提交规范：[模块] 具体功能描述，例如[用户] 实现找回密码发送验证码接口
+4.2.3 合并流程
+1. 每日18:00前推送本地分支到远程，发起Pull Request到dev
+2. 由架构师（常宇杰）审核代码后合并
+3. 每日开工前执行git pull origin dev同步最新代码
+4.2.4 冲突处理：遇到冲突先在本地解决，无法解决及时在群内反馈，禁止强制提交
+
+4.3 接口规范（调整后）
+4.3.1 统一返回格式（保持不变）
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {}
+}
+```
+状态码说明：200成功，400参数错误，401未登录，403无权限，500服务器错误
+
+4.3.2 接口地址规范：/api/v1/模块名/功能名，例如/api/v1/user/reset-password
+4.3.3 请求方法：GET（查询）、POST（新增）、PUT（修改）、DELETE（删除）
+4.3.4 接口定义方式：因砍掉Apifox，所有接口统一在docs/api/目录下以Markdown文件维护，包含请求参数、响应参数、状态码说明，前后端确认后更新文档并提交至仓库
+
+4.4 代码命名规范（保持不变）
+后端：类名大驼峰（UserController）、方法名小驼峰（resetPassword）、变量名小驼峰、常量全大写（USER_STATUS_NORMAL）
+前端：组件名大驼峰（LoginForm.jsx）、变量名小驼峰、路由路径短横线分隔（/user/profile）
+数据库：表名小写+下划线（sys_user）、字段名小写+下划线（user_name）
+
+五、数据库设计
+5.1 用户体系表结构（保持不变）
+5.1.1 用户表（sys_user）
+字段名	数据类型	约束	说明
+user_id	BIGINT	PRIMARY KEY, AUTO_INCREMENT	用户唯一ID
+user_name	VARCHAR(20)	NOT NULL, UNIQUE	用户名
+password	VARCHAR(100)	NOT NULL	BCrypt加密后的密码（当前为MD5，需迁移）
+email	VARCHAR(50)	NOT NULL, UNIQUE	注册邮箱
+phone	VARCHAR(11)	NULL	手机号
+nickname	VARCHAR(30)	NULL	昵称
+avatar	VARCHAR(255)	NULL	头像URL
+intro	VARCHAR(200)	NULL	个人简介
+status	TINYINT	NOT NULL, DEFAULT 1	账号状态：1正常，0禁用
+login_fail_count	INT	NOT NULL, DEFAULT 0	连续登录失败次数
+lock_time	DATETIME	NULL	账号锁定时间
+create_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP	创建时间
+
+update_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP	更新时间
+
+
+5.1.2 角色表（sys_role）
+字段名	数据类型	约束	说明
+role_id	BIGINT	PRIMARY KEY, AUTO_INCREMENT	角色ID
+role_name	VARCHAR(20)	NOT NULL, UNIQUE	角色名称：student/admin
+role_desc	VARCHAR(50)	NULL	角色描述
+create_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP	创建时间
+
+
+5.1.3 用户角色关联表（sys_user_role）
+字段名	数据类型	约束	说明
+id	BIGINT	PRIMARY KEY, AUTO_INCREMENT	主键ID
+user_id	BIGINT	NOT NULL, FOREIGN KEY REFERENCES sys_user(user_id)	用户ID
+role_id	BIGINT	NOT NULL, FOREIGN KEY REFERENCES sys_role(role_id)	角色ID
+UNIQUE KEY (user_id, role_id)	-	-	联合唯一索引
+
+
+5.2 算法知识库核心表结构（新增）
+5.2.1 知识点分类表（algo_category）
+字段名	数据类型	约束	说明
+category_id	BIGINT	PRIMARY KEY, AUTO_INCREMENT	分类ID
+category_name	VARCHAR(50)	NOT NULL, UNIQUE	分类名称
+parent_id	BIGINT	NULL, FOREIGN KEY REFERENCES algo_category(category_id)	父分类ID
+sort	INT	NOT NULL, DEFAULT 0	排序号
+create_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP	创建时间
+
+
+5.2.2 知识点表（algo_knowledge）
+字段名	数据类型	约束	说明
+knowledge_id	BIGINT	PRIMARY KEY, AUTO_INCREMENT	知识点ID
+title	VARCHAR(100)	NOT NULL, UNIQUE	知识点标题
+content	TEXT	NOT NULL	知识点内容
+category_id	BIGINT	NOT NULL, FOREIGN KEY REFERENCES algo_category(category_id)	所属分类ID
+difficulty	TINYINT	NOT NULL, DEFAULT 1	难度：1简单，2中等，3困难
+create_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP	创建时间
+update_time	DATETIME	NOT NULL, DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP	更新时间
+
+
+5.3 初始数据SQL脚本（保持不变，密码需重新加密）
+```sql
+-- 角色表初始数据
+INSERT INTO sys_role (role_name, role_desc) VALUES 
+('student', '普通学生'),
+('admin', '系统管理员');
+
+-- 初始管理员账号（密码：admin123，需重新生成BCrypt加密值）
+INSERT INTO sys_user (user_name, password, email, nickname, status) VALUES 
+('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'admin@algohub.com', '系统管理员', 1);
+
+-- 分配管理员角色
+INSERT INTO sys_user_role (user_id, role_id) VALUES (1, 2);
+```
+
+六、接口定义（文档内维护）
+6.1 用户系统接口
+接口地址	请求方法	功能描述	请求参数	响应数据	状态
+/api/v1/user/register	POST	用户注册	username, password, email, phone	无	已实现
+/api/v1/user/login	POST	用户登录	username, password, rememberMe	token, userInfo(userId, username, nickname, avatar, role)	已实现
+/api/v1/user/send-code	POST	发送验证码	email	无	待实现
+/api/v1/user/reset-password	POST	重置密码	email, code, newPassword	无	待实现
+/api/v1/user/profile	GET	获取个人信息	无（Header携带Token）	userInfo(所有个人字段)	已实现
+/api/v1/user/profile	PUT	修改个人信息	nickname, phone, intro, avatar	无	已实现
+/api/v1/user/update-password	PUT	修改密码	oldPassword, newPassword	无	已实现（需添加二次验证）
+/api/v1/user/logout	POST	退出登录	无（Header携带Token）	无	已实现
+
+
+6.2 算法知识库接口
+接口地址	请求方法	功能描述	请求参数	响应数据	状态
+/api/v1/algo/categories	GET	获取分类列表	parentId	分类列表	已实现
+/api/v1/algo/knowledges	GET	获取知识点列表	categoryId, keyword, page, size	分页知识点列表	已实现
+/api/v1/algo/knowledge/{id}	GET	获取知识点详情	id	知识点详情	已实现
+/api/v1/algo/knowledge/related	GET	获取关联知识点	content	关联知识点列表	待实现
+
+
+七、测试要求
+7.1 测试范围
+1. 功能测试：用户系统找回密码功能、算法知识库知识点关联跳转功能
+2. 安全测试：密码加密方式验证、XSS过滤测试、SQL防注入测试、修改密码二次验证
+3. 回归测试：用户系统与算法知识库所有已实现功能
+4. 兼容性测试：Chrome、Edge浏览器下的界面与功能测试
+5. Bug回归测试：全部已知Bug的验证
+
+7.2 测试数据与用例
+1. 正常测试数据：符合所有规则的邮箱、验证码、新密码、知识点内容
+2. 异常测试数据：未注册邮箱、错误验证码、过期验证码、弱密码、含XSS脚本的输入
+3. 核心测试用例：邮箱验证码发送、验证码正确/错误重置密码、知识点关联识别与跳转、XSS输入过滤、修改密码原密码错误验证
+
+7.3 Bug管理（保持不变）
+测试人员发现Bug后，在Gitee Issues中提交，包含：Bug标题、复现步骤、预期结果、实际结果、截图。开发人员修复后标记为"已解决"，测试人员验证通过后关闭Issue。
+
+八、中期分工与进度安排（第5-8天）
+天数	常宇杰（架构）	李艺萱（前端）	章恒福（后端）	郑新杰（后端）	尹冰洁（测试）	交付物
+第5天	制定技术栈迁移方案；编写自实现JWT认证框架；审核数据库新增表结构	完成React前端脚手架搭建；迁移登录/注册页面至React；实现基础路由	完成Spring Data JPA配置；迁移用户系统实体类与Repository；修复密码加密方式	迁移算法知识库实体类与Repository；实现自实现权限拦截器；编写XSS过滤工具类	编写安全测试用例；准备找回密码与知识点关联测试数据	React前端脚手架、JPA基础配置、自实现JWT认证框架
+第6天	集成自实现安全框架；代码审查；协调前后端接口对接	迁移个人信息页面至React；实现找回密码页面UI与表单验证	实现找回密码发送验证码接口；实现重置密码接口；添加修改密码二次验证	实现知识点关联查询接口；完善SQL防注入逻辑；批量迁移用户密码加密方式	执行安全测试；记录安全问题；编写找回密码功能测试用例	找回密码前后端接口、知识点关联查询接口、密码加密迁移脚本
+第7天	组织前后端联调；修复核心技术问题；合并代码到dev分支	联调找回密码接口；实现知识点关联跳转功能；优化界面交互	修复后端Bug；添加异常处理与日志；优化接口性能	完善权限校验逻辑；协助前端联调；更新接口文档	执行功能测试与回归测试；记录发现的Bug；验证安全问题整改	可运行的联调版本、接口文档V1.1、功能测试报告
+第8天	组织全流程测试；修复剩余Bug；合并代码到main分支，打标签v1.1-stable	修复前端Bug；优化用户体验；完成页面兼容性测试	修复后端Bug；编写部署文档；准备生产环境配置	协助测试人员进行回归测试；整理技术文档	执行全流程验收测试；验证所有Bug修复；输出最终测试报告	稳定版本v1.1-stable、最终测试报告、部署文档
+
+
+8.1 沟通机制（保持不变）
+1. 晚会（18:00-18:30）：同步当日进度，提交代码并发起Pull Request
+2. 实时沟通：使用微信群及时反馈问题，重大问题立即组织线上会议
+
+九、风险与应对措施
+可能风险	应对措施	责任人
+React与JPA技术不熟练导致开发延期	提前分享React与JPA基础教程；安排1小时技术分享；架构师一对一指导核心问题	常宇杰
+自实现安全框架存在漏洞	参考Spring Security核心逻辑编写；增加安全测试用例覆盖；架构师重点审核安全相关代码	常宇杰、郑新杰
+用户密码批量迁移出错	先在测试环境执行迁移脚本；备份生产环境数据；编写回滚脚本	章恒福
+功能延期	优先保证找回密码功能与安全整改；知识点关联跳转的模糊匹配可延后实现	常宇杰
+原Vue代码迁移不完整	制定详细的迁移清单；逐页面对比功能；增加回归测试用例覆盖	李艺萱
+
+
+十、当前项目问题清单
+10.1 功能缺口
+1. 用户系统：缺失"找回密码"完整功能
+2. 算法知识库：缺失"知识点关联跳转"功能
+
+10.2 安全问题
+1. 密码加密：使用MD5加密，安全性不足，需替换为BCrypt
+2. 输入过滤：无XSS过滤，存在跨站脚本攻击风险
+3. 二次验证：修改密码操作无原密码二次验证，存在账号被盗风险
+4. SQL防注入：部分接口存在拼接SQL语句的情况，需改为JPA参数绑定
+
+10.3 已知Bug清单
+Bug编号	模块	问题描述	优先级
+BUG-001	用户系统	登录成功后刷新页面，用户信息丢失	高
+BUG-002	用户系统	头像上传超过2MB时无提示，直接上传失败	中
+BUG-003	算法知识库	搜索关键词为空时，返回所有知识点而非提示输入关键词	低
+
+
+十一、后续模块规划
+1. 学习资源推荐模块：计划第9-12天启动开发，优先实现基础资源上传与分类展示功能
+2. 问答社区模块：计划第13-20天启动开发，优先实现问题发布与回答功能
+
+十二、附录
+12.1 工具下载地址
+工具名称	下载地址
+JDK8	https://www.oracle.com/java/technologies/downloads/#java8
+MySQL8.0	https://dev.mysql.com/downloads/mysql/
+Git	https://git-scm.com/downloads
+
+
+12.2 参考文档
+文档名称	链接地址
+React官方文档	https://react.dev/
+SpringBoot官方文档	https://spring.io/projects/spring-boot
+
+
+12.3 团队联系方式（保持不变）
+姓名	昵称	
+常宇杰	yujieChang666	yujiechang@example.com
+李艺萱	Siriusyu1	yixuanli@example.com
+章恒福	junkfood24	hengfuzhang@example.com
+郑新杰	KnightJay	xinjiezheng@example.com
+尹冰洁	ybbbing	bingjieyin@example.com
+
+
+---
+
+文档修订记录：
+1. V1.0（2026-04-24）：初始版本，覆盖用户体系全部需求与初期安排
+2. V1.1（2026-05-05）：中期调整版本，更新技术栈、已完成模块现状、功能补全需求、安全整改要求及中期进度安排

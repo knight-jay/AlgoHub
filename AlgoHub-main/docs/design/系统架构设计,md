@@ -1,0 +1,442 @@
+系统设计
+
+1. 系统架构
+
+1.1 总体架构
+
+本项目采用前后端分离的 B/S 架构，前端为独立的 SPA（单页应用），后端为 RESTful API 服务，前后端通过 HTTP/JSON 协议通信。系统整体分为四层：
+
+层次：表示层（Presentation）
+职责：页面渲染、用户交互、表单验证
+核心技术：React 18 + TypeScript + Vite
+层次：服务层（Application）
+职责：业务逻辑处理、权限校验、JWT 认证
+核心技术：Spring Boot 4.0.6 (Java 17)
+层次：持久层（Persistence）
+职责：数据访问与对象关系映射
+核心技术：Spring Data JPA (Hibernate)
+层次：数据层（Database）
+职责：结构化数据存储
+核心技术：MySQL 8.0 (InnoDB)
+
+架构设计遵循以下原则：
+- 关注点分离：前端专注 UI 交互，后端专注业务逻辑与数据管理
+- RESTful 风格：资源导向的 API 设计，统一 JSON 响应格式 `{ code, msg, data }`
+- 无状态认证：基于 JWT Bearer Token 的身份认证，服务端不存储会话
+- 三层解耦：后端按 Controller → Service → Repository 分层，各层职责明确
+
+1.2 架构图
+
+![系统架构图](./assets/fig_architecture.png)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                          客户端 (Browser)                              │
+│                     http://localhost:5173                             │
+│                                                                       │
+│   ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌──────────────────┐  │
+│   │  Login   │ │  Home    │ │AlgorithmDetail│ │  Admin Panel     │  │
+│   │  Register│ │ (算法浏览)│ │  (算法详情)    │ │ (用户/算法/分类) │  │
+│   └────┬─────┘ └────┬─────┘ └──────┬───────┘ └────────┬─────────┘  │
+│        │             │              │                   │             │
+│   ┌────┴─────────────┴──────────────┴───────────────────┴─────────┐ │
+│   │                    Axios HTTP Client                            │ │
+│   │   - 请求拦截器：自动附加 Authorization: Bearer <JWT>             │ │
+│   │   - 响应拦截器：401 → 清除 token → 重定向 /login                  │ │
+│   └────────────────────────────┬────────────────────────────────────┘ │
+└────────────────────────────────┼──────────────────────────────────────┘
+                                 │  HTTP/JSON (REST API)
+                    Vite Proxy: /api → localhost:8080
+                                 │
+┌────────────────────────────────┼──────────────────────────────────────┐
+│                         服务端 (Spring Boot)                           │
+│                                │                                       │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │                    WebConfig (拦截器注册)                        │ │
+│   │         放行：/api/user/login, /api/user/register,              │ │
+│   │               /api/algorithm/**                                 │ │
+│   │         拦截：其余 /api/** 需 JWT 校验                           │ │
+│   └────────────────────────────┬───────────────────────────────────┐ │
+│                                │                                      │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │                  JwtInterceptor (JWT 认证)                      │ │
+│   │   1. 提取 Authorization: Bearer <token>                        │ │
+│   │   2. 解析 JWT → userId, username, role                         │ │
+│   │   3. 将用户信息写入 request attributes                          │ │
+│   │   4. 失败 → 返回 401 JSON                                       │ │
+│   └────────────────────────────┬───────────────────────────────────┐ │
+│                                │                                      │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │                     Controller 层 (REST API)                    │ │
+│   │                                                                  │ │
+│   │  UserController           AlgorithmController                   │ │
+│   │  POST /api/user/register  GET  /api/algorithm/categories       │ │
+│   │  POST /api/user/login     GET  /api/algorithm/{id}             │ │
+│   │  GET  /api/user/profile   GET  /api/algorithm/search           │ │
+│   │  PUT  /api/user/profile   GET  /api/algorithm/category/{cid}   │ │
+│   │  PUT  /api/user/password  GET  /api/algorithm/difficulty/{d}   │ │
+│   │                                                                  │ │
+│   │  AdminController              AlgorithmAdminController          │ │
+│   │  GET  /api/admin/users        POST  /api/admin/algorithm        │ │
+│   │  PUT  /api/admin/users/{id}   PUT   /api/admin/algorithm/{id}   │ │
+│   │  /status & /role              DELETE /api/admin/algorithm/{id}  │ │
+│   │                               POST/PUT/DELETE .../category      │ │
+│   └────────────────────────────┬───────────────────────────────────┐ │
+│                                │                                      │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │                      Service 层 (业务逻辑)                       │ │
+│   │                                                                  │ │
+│   │  UserServiceImpl              AlgorithmServiceImpl              │ │
+│   │  - 注册参数校验（用户名3-20位、  - 分类树构建（自引用递归）        │ │
+│   │    密码6-20位、手机号11位）     - 关键词搜索（JPQL LIKE 模糊匹配）│ │
+│   │  - MD5 密码哈希               - 分类/难度多维度筛选              │ │
+│   │  - 唯一性检查（用户名/手机号）  - 算法详情查询与 CRUD              │ │
+│   │  - JWT Token 签发（24h/7天）  - 管理员后台增删改                  │ │
+│   │  - 个人信息修改与密码变更                                        │ │
+│   └────────────────────────────┬───────────────────────────────────┐ │
+│                                │                                      │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │                    Repository 层 (数据访问)                      │ │
+│   │                                                                  │ │
+│   │  UserRepository               AlgorithmRepository               │ │
+│   │  extends JpaRepository        extends JpaRepository             │ │
+│   │  - findByUsername()           - findByCategoryIdOrderBy...()    │ │
+│   │  - findByPhone()              - searchByKeyword(@Query JPQL)    │ │
+│   │  - existsByUsername()         - findByDifficulty()              │ │
+│   │  - findByRole()               - findByTagsContaining()          │ │
+│   │                                                                  │ │
+│   │  AlgorithmCategoryRepository                                    │ │
+│   │  - findByParentIdIsNull()  -- 查询顶级分类                       │ │
+│   │  - findByParentId()        -- 查询子分类                         │ │
+│   └────────────────────────────┬───────────────────────────────────┐ │
+│                                │                                      │
+│   ┌────────────────────────────▼───────────────────────────────────┐ │
+│   │              GlobalExceptionHandler (全局异常处理)               │ │
+│   │  统一捕获所有未处理异常，返回 Result { code, msg, data } JSON    │ │
+│   └────────────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────┬──────────────────────────────────┘
+                                     │  JDBC (mysql-connector-j)
+                                     │  HikariCP 连接池（Spring Boot 默认）
+                                     ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                        MySQL 8.0 (algohub)                            │
+│                                                                       │
+│   ┌──────────────┐  ┌──────────────────────┐  ┌───────────────────┐ │
+│   │    users     │  │ algorithm_categories │  │    algorithms     │ │
+│   │              │  │                      │  │                   │ │
+│   │ id (PK)      │  │ id (PK)              │  │ id (PK)           │ │
+│   │ username     │  │ name                 │  │ title             │ │
+│   │ password(MD5)│  │ parent_id (FK→本表)   │──│ category_id (FK)  │ │
+│   │ phone        │  │ sort_order           │  │ description       │ │
+│   │ role         │  │ create_time          │  │ usage_intro       │ │
+│   │ locked       │  │ children (@OneToMany) │  │ cpp_template      │ │
+│   │ + 其他个人信息│  │ parent  (@ManyToOne)  │  │ difficulty        │ │
+│   └──────────────┘  └──────────────────────┘  │ tags              │ │
+│                                                └───────────────────┘ │
+│   引擎：InnoDB  字符集：utf8mb4  外键约束：ON DELETE SET NULL          │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+1.3 请求处理流程
+
+以一次典型的"登录后浏览算法详情"的完整链路为例：
+
+```
+步骤1: POST /api/user/login  { username, password, role, rememberMe }
+  ├─ UserController.login()
+  ├─ UserServiceImpl.login()
+  │   ├─ userRepo.findByUsername()       → SELECT * FROM users WHERE username=?
+  │   ├─ MD5(password) == user.password  → 密码校验
+  │   ├─ user.locked == 0                → 锁定状态检查
+  │   ├─ user.role == loginRole          → 角色匹配校验
+  │   └─ jwtUtil.generateToken()         → HS256 签发 JWT (含 userId/username/role)
+  └─ 返回 { code:200, data:{ token, userInfo } }
+
+步骤2: 前端存储 token 到 localStorage，跳转首页
+  └─ Axios 拦截器自动为后续所有请求附加 Authorization: Bearer <token>
+
+步骤3: GET /api/algorithm/categories  (获取分类树)
+  ├─ JwtInterceptor 放行 (/api/algorithm/** 在白名单中)
+  ├─ AlgorithmController.getCategories()
+  └─ AlgorithmServiceImpl.getCategoryTree()
+      └─ categoryRepo.findByParentIdIsNull() → 顶级分类 + JPA 懒加载 children
+
+步骤4: GET /api/algorithm/search?keyword=  (获取全部算法列表)
+  └─ AlgorithmServiceImpl.searchAlgorithms("")
+      └─ algorithmRepo.searchByKeyword("")  → JPQL: WHERE title LIKE '%%' ORDER BY createTime DESC
+
+步骤5: GET /api/algorithm/1  (获取"快速排序"算法详情)
+  └─ AlgorithmServiceImpl.getAlgorithmDetail(1)
+      └─ algorithmRepo.findById(1)  → 返回含 C++ 模板代码的完整算法对象
+```
+
+1.4 安全架构
+
+```
+┌───────────────────────────────────────────────┐
+│                 安全模型                        │
+│                                                │
+│  公开接口（无需认证）                            │
+│  ├── POST /api/user/register                  │
+│  ├── POST /api/user/login                     │
+│  └── GET  /api/algorithm/**                   │
+│                                                │
+│  认证接口（需有效 JWT）                          │
+│  ├── GET/PUT /api/user/profile                │
+│  └── PUT /api/user/password                   │
+│                                                │
+│  授权接口（需 JWT + role=ADMIN）                 │
+│  └── ALL /api/admin/**                        │
+│                                                │
+│  Token 策略：                                   │
+│  - 签名算法：HS256                              │
+│  - 有效期：默认 24h / "记住我" 7 天              │
+│  - 载荷：{ userId, username, role, exp }       │
+│  - 存储：前端 localStorage                      │
+│  - 传输：Authorization: Bearer <token> Header  │
+│                                                │
+│  前端安全：                                     │
+│  - ProtectedRoute: 检查 token 存在性            │
+│  - AdminLayout: 检查 role === 'ADMIN'          │
+│  - Axios 响应拦截器: 401 → 清除 token → 跳转登录 │
+└───────────────────────────────────────────────┘
+```
+
+---
+
+2. 模块设计
+
+2.1 模块总览
+
+系统目前包含两大功能模块和一个管理后台模块：
+
+```
+AlgoHub 系统
+│
+├── 1. 用户模块 (User Module)
+│   ├── 1.1 用户注册
+│   ├── 1.2 用户登录 / JWT 认证
+│   ├── 1.3 个人信息管理（查看 / 修改资料 / 修改密码）
+│   └── 1.4 角色权限控制（STUDENT / ADMIN）
+│
+├── 2. 算法知识库模块 (Algorithm Knowledge Base)
+│   ├── 2.1 分类浏览（两级树形目录，8 大类 53 子类）
+│   ├── 2.2 算法搜索（按关键词 / 分类 / 难度三维筛选）
+│   ├── 2.3 算法详情展示（简介 / 用法说明 / C++ 模板代码）
+│   └── 2.4 代码一键复制
+│
+└── 3. 管理后台模块 (Admin Panel)
+    ├── 3.1 用户管理（列表查看 / 启用禁用 / 角色变更）
+    ├── 3.2 算法管理（增删改算法条目）
+    └── 3.3 分类管理（树形分类的增删改）
+```
+
+2.2 模块交互关系
+
+```
+                    ┌──────────────┐
+                    │   管理后台    │
+                    │  (Admin)     │
+                    │              │
+                    │ 用户管理      │─────── 管理 users 表（锁定/角色变更）
+                    │ 算法 CRUD    │─────── 管理 algorithms 表（增删改）
+                    │ 分类管理      │─────── 管理 categories 表（增删改）
+                    └──────┬───────┘
+                           │ 依赖认证模块提供 JWT 校验 + 角色判断
+                    ┌──────▼───────┐
+                    │   用户模块    │
+                    │  (User)      │
+                    │              │
+                    │ 注册 / 登录   │─────── JWT 签发（HS256，含角色信息）
+                    │ 个人信息      │─────── users 表 CRUD
+                    │ 角色权限      │─────── STUDENT / ADMIN 双角色
+                    └──────┬───────┘
+                           │ 提供认证信息
+                    ┌──────▼───────┐
+                    │  算法知识库   │
+                    │ (Algorithm)  │
+                    │              │
+                    │ 分类浏览      │─────── algorithm_categories 表（自引用树）
+                    │ 算法搜索      │─────── algorithms 表（JPQL LIKE 模糊匹配）
+                    │ 算法详情      │─────── 含 C++ 模板代码展示
+                    │ 难度筛选      │─────── easy / medium / hard
+                    │ 代码复制      │─────── navigator.clipboard API
+                    └──────────────┘
+```
+
+2.3 前后端模块对应关系
+
+前端页面（React）：pages/Login.tsx
+后端 Controller：UserController.login()
+操作的数据表：users
+前端页面（React）：pages/Register.tsx
+后端 Controller：UserController.register()
+操作的数据表：users
+前端页面（React）：pages/Home.tsx
+后端 Controller：AlgorithmController (search/categories)
+操作的数据表：algorithms, algorithm_categories
+前端页面（React）：pages/AlgorithmDetail.tsx
+后端 Controller：AlgorithmController.getDetail()
+操作的数据表：algorithms
+前端页面（React）：pages/Profile.tsx
+后端 Controller：UserController (getProfile/updateProfile/changePassword)
+操作的数据表：users
+前端页面（React）：pages/admin/UserManagement.tsx
+后端 Controller：AdminController (listUsers/toggleStatus/changeRole)
+操作的数据表：users
+前端页面（React）：pages/admin/AlgorithmManagement.tsx
+后端 Controller：AlgorithmAdminController (CRUD)
+操作的数据表：algorithms
+前端页面（React）：pages/admin/CategoryManagement.tsx
+后端 Controller：AlgorithmAdminController (category CRUD)
+操作的数据表：algorithm_categories
+
+2.4 前端组件层级
+
+```
+<BrowserRouter>
+  <App>
+    <Routes>
+      ├── /login          → <Login />              (公开)
+      ├── /register       → <Register />           (公开)
+      ├── <ProtectedRoute>                          (路由守卫：检查 token)
+      │   ├── <Layout>                              (主布局：顶部导航)
+      │   │   ├── /              → <Home />         (算法浏览页)
+      │   │   ├── /algorithm/:id → <AlgorithmDetail />
+      │   │   └── /profile       → <Profile />
+      │   │
+      │   └── <AdminLayout>                         (管理布局：侧边栏导航)
+      │       ├── /admin/users       → <UserManagement />
+      │       ├── /admin/algorithms  → <AlgorithmManagement />
+      │       └── /admin/categories  → <CategoryManagement />
+      └── *              → Navigate to /login       (通配符重定向)
+```
+
+---
+
+3. 数据库设计
+
+3.1 E-R 图
+
+![数据库ER图](./assets/fig_er.png)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        数据库 ER 关系                             │
+│                                                                  │
+│  ┌──────────────────────┐                                        │
+│  │        users         │    ← 独立实体，与算法模块无直接关联      │
+│  ├──────────────────────┤                                        │
+│  │ id (PK, BIGINT)      │                                        │
+│  │ username (UNIQUE)    │                                        │
+│  │ password (MD5哈希)    │                                        │
+│  │ phone (UNIQUE)       │                                        │
+│  │ nickname             │                                        │
+│  │ avatar               │                                        │
+│  │ intro                │                                        │
+│  │ role (STUDENT/ADMIN) │                                        │
+│  │ locked (0=正常/1=禁用)│                                        │
+│  │ create_time          │                                        │
+│  │ update_time          │                                        │
+│  └──────────────────────┘                                        │
+│                                                                  │
+│  ┌──────────────────────┐          ┌──────────────────────┐     │
+│  │ algorithm_categories │          │     algorithms       │     │
+│  ├──────────────────────┤          ├──────────────────────┤     │
+│  │ id (PK, BIGINT)      │──┐       │ id (PK, BIGINT)      │     │
+│  │ name (VARCHAR 50)    │  │       │ title (VARCHAR 100)  │     │
+│  │ parent_id (FK→本表)  │◀─┘       │ description (TEXT)   │     │
+│  │ sort_order (INT)     │ 自引用   │ usage_intro (TEXT)  │     │
+│  │ create_time          │          │ cpp_template (TEXT)  │     │
+│  └──────────────────────┘          │ category_id (FK) ────┼───→ algorithm_categories.id
+│                                    │ difficulty (VARCHAR) │     │
+│        1 : N                       │ tags (VARCHAR 255)   │     │
+│   (一个分类下有多个算法)             │ create_time          │     │
+│                                    │ update_time          │     │
+│                                    └──────────────────────┘     │
+│                                                                  │
+│  外键策略：                                                       │
+│  - categories.parent_id → categories.id  (ON DELETE SET NULL)   │
+│  - algorithms.category_id → categories.id (ON DELETE SET NULL)  │
+│                                                                  │
+│  设计说明：                                                       │
+│  - users 表独立，与算法模块无外键关联，便于用户体系独立扩展        │
+│  - algorithm_categories 通过 parent_id 自引用实现无限层级树        │
+│  - 删除分类时算法保留，category_id 置为 NULL，避免级联删除数据     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.2 主要数据表设计
+
+users 表（用户表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | 主键 |
+| username | VARCHAR(20) | NOT NULL, UNIQUE | 用户名，3-20 字符 |
+| password | VARCHAR(255) | NOT NULL | 密码（MD5 哈希存储） |
+| phone | VARCHAR(11) | NOT NULL, UNIQUE | 手机号，11 位数字 |
+| nickname | VARCHAR(255) | — | 昵称 |
+| avatar | VARCHAR(255) | — | 头像 URL |
+| intro | VARCHAR(255) | — | 个人简介 |
+| role | VARCHAR(20) | NOT NULL, DEFAULT 'STUDENT' | 角色：STUDENT / ADMIN |
+| locked | INT | NOT NULL, DEFAULT 0 | 锁定状态（0=正常, 1=禁用） |
+| create_time | DATETIME | — | 创建时间 |
+| update_time | DATETIME | — | 更新时间 |
+
+索引：
+- PRIMARY KEY: `id`
+- UNIQUE KEY `uk_username`: `username`
+- UNIQUE KEY `uk_phone`: `phone`
+
+algorithm_categories 表（算法分类表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | 主键 |
+| name | VARCHAR(50) | NOT NULL | 分类名称 |
+| parent_id | BIGINT | FK → algorithm_categories.id, ON DELETE SET NULL | 父分类 ID（NULL=顶级分类） |
+| sort_order | INT | DEFAULT 0 | 同级排序序号 |
+| create_time | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+
+索引：
+- PRIMARY KEY: `id`
+- FOREIGN KEY: `parent_id` → `algorithm_categories(id)` ON DELETE SET NULL
+
+algorithms 表（算法详情表）
+
+| 字段名 | 类型 | 约束 | 说明 |
+|--------|------|------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | 主键 |
+| title | VARCHAR(100) | NOT NULL | 算法名称 |
+| description | TEXT | — | 算法简介 |
+| usage_intro | TEXT | — | 使用场景/用法说明 |
+| cpp_template | TEXT | — | C++ 模板代码 |
+| category_id | BIGINT | FK → algorithm_categories.id, ON DELETE SET NULL | 所属分类 |
+| difficulty | VARCHAR(20) | DEFAULT 'medium' | 难度：easy / medium / hard |
+| tags | VARCHAR(255) | — | 标签，逗号分隔 |
+| create_time | DATETIME | DEFAULT CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | ON UPDATE CURRENT_TIMESTAMP | 自动更新时间 |
+
+索引：
+- PRIMARY KEY: `id`
+- FOREIGN KEY: `category_id` → `algorithm_categories(id)` ON DELETE SET NULL
+
+#### 3.3 种子数据概览
+
+| 表 | 记录数 | 内容 |
+|----|--------|------|
+| users | 2 条 | admin（管理员）/ student（学生），默认密码 123456（MD5存储） |
+| algorithm_categories | 61 条 | 8 个顶级分类 + 53 个子分类 |
+| algorithms | 68 条 | 覆盖全部子分类，每条含完整 C++ 模板代码 |
+
+分类覆盖范围：
+- 基础算法（排序、二分、贪心、分治、双指针、前缀和、离散化、位运算）
+- 搜索（DFS、BFS、双向BFS、回溯）
+- 数据结构（并查集、哈希、单调栈/队列、线段树、树状数组、LCA、Trie、AC自动机、分块、莫队）
+- 图论（最小生成树、最短路、拓扑排序、SCC、割点/边、二分图、欧拉路径、差分约束）
+- 动态规划（背包、区间、树形、数位、状压、计数、概率DP）
+- 字符串（KMP、Manacher）
+- 数学（素数筛、欧拉函数、扩展GCD、中国剩余定理、快速幂、组合数、容斥、博弈论、高斯消元、线性基）
+- 思维技巧（模拟、构造、逆向思维）
+
