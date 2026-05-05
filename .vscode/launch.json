@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "LoginApplication",
+            "request": "launch",
+            "mainClass": "io.github.algohub.backend.LoginApplication",
+            "projectName": ""
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-LoginApplication<backend>",
             "request": "launch",
             "cwd": "${workspaceFolder}",
