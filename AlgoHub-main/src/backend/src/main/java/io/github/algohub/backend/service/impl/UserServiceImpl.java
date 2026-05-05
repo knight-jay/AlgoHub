@@ -29,9 +29,16 @@ public class UserServiceImpl implements UserService {
         String confirmPassword = dto.getConfirmPassword() == null ? "" : dto.getConfirmPassword().trim();
         String phone = dto.getPhone() == null ? "" : dto.getPhone().trim();
         String role = dto.getRole() == null ? "STUDENT" : dto.getRole().trim().toUpperCase();
+        String nickname = dto.getNickname() == null ? "" : dto.getNickname().trim();
 
         if (username.length() < 3 || username.length() > 20) {
             return Result.error("用户名长度必须在3-20位之间");
+        }
+        if (username.contains(" ")) {
+            return Result.error("用户名不能包含空格");
+        }
+        if (nickname.isEmpty()) {
+            return Result.error("昵称不能为空");
         }
         if (password.length() < 6 || password.length() > 20) {
             return Result.error("密码长度必须在6-20位之间");
@@ -58,6 +65,7 @@ public class UserServiceImpl implements UserService {
         user.setUsername(username);
         user.setPassword(encryptedPwd);
         user.setPhone(phone);
+        user.setNickname(nickname);
         user.setRole(role);
         user.setLocked(0);
         user.setCreateTime(LocalDateTime.now());
@@ -115,25 +123,44 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             return Result.error("用户不存在");
         }
+        boolean changed = false;
         if (dto.getPhone() != null) {
             String phone = dto.getPhone().trim();
             if (!Pattern.matches("^\\d{11}$", phone)) {
                 return Result.error("请输入有效的手机号");
             }
-            User existPhone = userRepo.findByPhone(phone);
-            if (existPhone != null && !existPhone.getId().equals(userId)) {
-                return Result.error("该手机号已被其他用户使用");
+            if (!phone.equals(user.getPhone())) {
+                User existPhone = userRepo.findByPhone(phone);
+                if (existPhone != null && !existPhone.getId().equals(userId)) {
+                    return Result.error("该手机号已被其他用户使用");
+                }
+                user.setPhone(phone);
+                changed = true;
             }
-            user.setPhone(phone);
         }
         if (dto.getNickname() != null) {
-            user.setNickname(dto.getNickname().trim());
+            String nickname = dto.getNickname().trim();
+            if (!nickname.equals(user.getNickname())) {
+                user.setNickname(nickname);
+                changed = true;
+            }
         }
         if (dto.getAvatar() != null) {
-            user.setAvatar(dto.getAvatar().trim());
+            String avatar = dto.getAvatar().trim();
+            if (!avatar.equals(user.getAvatar())) {
+                user.setAvatar(avatar);
+                changed = true;
+            }
         }
         if (dto.getIntro() != null) {
-            user.setIntro(dto.getIntro().trim());
+            String intro = dto.getIntro().trim();
+            if (!intro.equals(user.getIntro())) {
+                user.setIntro(intro);
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return Result.error("信息未发生修改");
         }
         user.setUpdateTime(LocalDateTime.now());
         userRepo.save(user);
@@ -151,6 +178,9 @@ public class UserServiceImpl implements UserService {
             return Result.error("原密码错误");
         }
         String newPwd = dto.getNewPassword();
+        if (oldPwd.equals(DigestUtils.md5DigestAsHex(newPwd.getBytes()))) {
+            return Result.error("新密码不能与旧密码相同");
+        }
         if (newPwd == null || newPwd.length() < 6 || newPwd.length() > 20) {
             return Result.error("新密码长度必须在6-20位之间");
         }
