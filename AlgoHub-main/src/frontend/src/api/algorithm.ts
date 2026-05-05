@@ -1,5 +1,5 @@
 import client from './client'
-import type { Result, Algorithm, AlgorithmCategory, SearchResult } from '../types'
+import type { Result, Algorithm, AlgorithmCategory, PageResult } from '../types'
 
 export const algorithmApi = {
   getCategories: () =>
@@ -11,12 +11,18 @@ export const algorithmApi = {
   getDetail: (id: number) =>
     client.get<Result<Algorithm>>(`/algorithm/${id}`),
 
-  search: (keyword: string) =>
-    client.get<Result<SearchResult>>('/algorithm/search', { params: { keyword } }),
+  search: (keyword: string, page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<Algorithm>>>('/algorithm/search', {
+      params: { keyword, page, pageSize },
+    }),
 
-  getByCategory: (categoryId: number) =>
-    client.get<Result<Algorithm[]>>(`/algorithm/category/${categoryId}`),
+  getByCategory: (categoryId: number, page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<Algorithm>>>(`/algorithm/category/${categoryId}`, {
+      params: { page, pageSize },
+    }),
 
-  getByDifficulty: (difficulty: string) =>
-    client.get<Result<Algorithm[]>>(`/algorithm/difficulty/${difficulty}`),
+  getByDifficulty: (difficulty: string, page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<Algorithm>>>(`/algorithm/difficulty/${difficulty}`, {
+      params: { page, pageSize },
+    }),
 }

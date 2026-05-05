@@ -5,6 +5,14 @@ export interface Result<T = unknown> {
   data: T
 }
 
+// 分页结果
+export interface PageResult<T> {
+  list: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 // 用户
 export interface User {
   id: number
@@ -49,12 +57,6 @@ export interface Algorithm {
   tags?: string
   createTime: string
   updateTime: string
-}
-
-// 搜索响应
-export interface SearchResult {
-  total: number
-  list: Algorithm[]
 }
 
 // 注册 DTO

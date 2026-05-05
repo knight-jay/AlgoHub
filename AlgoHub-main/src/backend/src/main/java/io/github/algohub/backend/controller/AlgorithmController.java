@@ -1,5 +1,6 @@
 package io.github.algohub.backend.controller;
 
+import io.github.algohub.backend.common.PageResult;
 import io.github.algohub.backend.common.Result;
 import io.github.algohub.backend.entity.Algorithm;
 import io.github.algohub.backend.entity.AlgorithmCategory;
@@ -7,9 +8,7 @@ import io.github.algohub.backend.service.AlgorithmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/algorithm")
@@ -38,21 +37,26 @@ public class AlgorithmController {
     }
 
     @GetMapping("/search")
-    public Result<Map<String, Object>> search(@RequestParam String keyword) {
-        List<Algorithm> list = algorithmService.searchAlgorithms(keyword);
-        Map<String, Object> data = new HashMap<>();
-        data.put("total", list.size());
-        data.put("list", list);
-        return Result.success(data);
+    public Result<PageResult<Algorithm>> search(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return Result.success(algorithmService.searchAlgorithms(keyword, page, pageSize));
     }
 
     @GetMapping("/category/{categoryId}")
-    public Result<List<Algorithm>> getByCategory(@PathVariable Long categoryId) {
-        return Result.success(algorithmService.getAlgorithmsByCategory(categoryId));
+    public Result<PageResult<Algorithm>> getByCategory(
+            @PathVariable Long categoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return Result.success(algorithmService.getAlgorithmsByCategory(categoryId, page, pageSize));
     }
 
     @GetMapping("/difficulty/{difficulty}")
-    public Result<List<Algorithm>> getByDifficulty(@PathVariable String difficulty) {
-        return Result.success(algorithmService.getAlgorithmsByDifficulty(difficulty));
+    public Result<PageResult<Algorithm>> getByDifficulty(
+            @PathVariable String difficulty,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        return Result.success(algorithmService.getAlgorithmsByDifficulty(difficulty, page, pageSize));
     }
 }

@@ -1,5 +1,6 @@
 package io.github.algohub.backend.service;
 
+import io.github.algohub.backend.common.PageResult;
 import io.github.algohub.backend.entity.Algorithm;
 import io.github.algohub.backend.entity.AlgorithmCategory;
 
@@ -9,9 +10,9 @@ public interface AlgorithmService {
     List<AlgorithmCategory> getCategoryTree();
     List<AlgorithmCategory> getSubCategories(Long parentId);
     Algorithm getAlgorithmDetail(Long id);
-    List<Algorithm> searchAlgorithms(String keyword);
-    List<Algorithm> getAlgorithmsByCategory(Long categoryId);
-    List<Algorithm> getAlgorithmsByDifficulty(String difficulty);
+    PageResult<Algorithm> searchAlgorithms(String keyword, int page, int pageSize);
+    PageResult<Algorithm> getAlgorithmsByCategory(Long categoryId, int page, int pageSize);
+    PageResult<Algorithm> getAlgorithmsByDifficulty(String difficulty, int page, int pageSize);
     Algorithm saveAlgorithm(Algorithm algorithm);
     Algorithm updateAlgorithm(Long id, Algorithm algorithm);
     void deleteAlgorithm(Long id);

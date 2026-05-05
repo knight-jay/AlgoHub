@@ -10,6 +10,8 @@ const DIFFICULTIES = [
   { value: 'hard', label: '困难' },
 ]
 
+const PAGE_SIZE = 10
+
 export default function Home() {
   const [categories, setCategories] = useState<AlgorithmCategory[]>([])
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([])
@@ -18,8 +20,11 @@ export default function Home() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('')
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [error, setError] = useState('')
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const toggleExpand = (id: number) => {
     setExpandedIds((prev) => {
@@ -30,31 +35,34 @@ export default function Home() {
     })
   }
 
-  const fetchAlgorithms = useCallback(async (categoryId: number | null, difficulty: string) => {
+  const fetchAlgorithms = useCallback(async (categoryId: number | null, difficulty: string, p: number) => {
     setLoading(true)
     setError('')
     try {
       if (categoryId) {
-        const res = await algorithmApi.getByCategory(categoryId)
+        const res = await algorithmApi.getByCategory(categoryId, p, PAGE_SIZE)
         if (res.data.code === 200) {
-          setAlgorithms(res.data.data)
-          setTotal(res.data.data.length)
+          const d = res.data.data
+          setAlgorithms(d.list)
+          setTotal(d.total)
         } else {
           setError(res.data.msg || '获取算法失败')
         }
       } else if (difficulty) {
-        const res = await algorithmApi.getByDifficulty(difficulty)
+        const res = await algorithmApi.getByDifficulty(difficulty, p, PAGE_SIZE)
         if (res.data.code === 200) {
-          setAlgorithms(res.data.data)
-          setTotal(res.data.data.length)
+          const d = res.data.data
+          setAlgorithms(d.list)
+          setTotal(d.total)
         } else {
           setError(res.data.msg || '获取算法失败')
         }
       } else {
-        const res = await algorithmApi.search('')
+        const res = await algorithmApi.search('', p, PAGE_SIZE)
         if (res.data.code === 200) {
-          setAlgorithms(res.data.data.list)
-          setTotal(res.data.data.total)
+          const d = res.data.data
+          setAlgorithms(d.list)
+          setTotal(d.total)
         } else {
           setError(res.data.msg || '搜索失败')
         }
@@ -69,18 +77,21 @@ export default function Home() {
 
   const handleSearch = async () => {
     if (!keyword.trim()) {
-      fetchAlgorithms(null, '')
+      setPage(1)
+      fetchAlgorithms(null, '', 1)
       return
     }
     setSelectedCategory(null)
     setSelectedDifficulty('')
+    setPage(1)
     setLoading(true)
     setError('')
     try {
-      const res = await algorithmApi.search(keyword.trim())
+      const res = await algorithmApi.search(keyword.trim(), 1, PAGE_SIZE)
       if (res.data.code === 200) {
-        setAlgorithms(res.data.data.list)
-        setTotal(res.data.data.total)
+        const d = res.data.data
+        setAlgorithms(d.list)
+        setTotal(d.total)
       } else {
         setError(res.data.msg || '搜索失败')
       }
@@ -96,14 +107,33 @@ export default function Home() {
     setSelectedCategory(id)
     setSelectedDifficulty('')
     setKeyword('')
-    fetchAlgorithms(id, '')
+    setPage(1)
+    fetchAlgorithms(id, '', 1)
   }
 
   const handleDifficultyClick = (d: string) => {
     setSelectedDifficulty(d)
     setSelectedCategory(null)
     setKeyword('')
-    fetchAlgorithms(null, d)
+    setPage(1)
+    fetchAlgorithms(null, d, 1)
+  }
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === page) return
+    setPage(p)
+    if (keyword.trim()) {
+      setLoading(true)
+      setError('')
+      algorithmApi.search(keyword.trim(), p, PAGE_SIZE).then((res) => {
+        if (res.data.code === 200) {
+          setAlgorithms(res.data.data.list)
+          setTotal(res.data.data.total)
+        }
+      }).catch(() => setError('网络请求失败')).finally(() => setLoading(false))
+    } else {
+      fetchAlgorithms(selectedCategory, selectedDifficulty, p)
+    }
   }
 
   useEffect(() => {
@@ -112,7 +142,7 @@ export default function Home() {
     }).catch((err) => {
       console.error('获取分类失败:', err)
     })
-    fetchAlgorithms(null, '')
+    fetchAlgorithms(null, '', 1)
   }, [fetchAlgorithms])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -240,7 +270,9 @@ export default function Home() {
 
         {/* 结果统计 */}
         {total > 0 && (
-          <p style={{ fontSize: 14, color: '#888', marginBottom: 12 }}>共 {total} 个算法</p>
+          <p style={{ fontSize: 14, color: '#888', marginBottom: 12 }}>
+            共 {total} 个算法，第 {page}/{totalPages} 页
+          </p>
         )}
 
         {/* 错误提示 */}
@@ -255,35 +287,69 @@ export default function Home() {
           ) : algorithms.length === 0 ? (
             <div className="empty">暂无算法数据，请先导入数据库初始化脚本</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {algorithms.map((algo) => (
-                <Link
-                  key={algo.id}
-                  to={`/algorithm/${algo.id}`}
-                  className="card"
-                  style={{ textDecoration: 'none', color: 'inherit', padding: 20, transition: 'box-shadow 0.2s' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <h3 style={{ fontSize: 17, color: '#333' }}>{algo.title}</h3>
-                    <span className={`difficulty-tag diff-${algo.difficulty}`}>
-                      {{ easy: '简单', medium: '中等', hard: '困难' }[algo.difficulty] || algo.difficulty}
-                    </span>
-                  </div>
-                  {algo.description && (
-                    <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
-                      {algo.description.length > 120 ? algo.description.slice(0, 120) + '...' : algo.description}
-                    </p>
-                  )}
-                  {algo.tags && (
-                    <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {algo.tags.split(',').map((tag) => (
-                        <span key={tag} className="tag">{tag.trim()}</span>
-                      ))}
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {algorithms.map((algo) => (
+                  <Link
+                    key={algo.id}
+                    to={`/algorithm/${algo.id}`}
+                    className="card"
+                    style={{ textDecoration: 'none', color: 'inherit', padding: 20, transition: 'box-shadow 0.2s' }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <h3 style={{ fontSize: 17, color: '#333' }}>{algo.title}</h3>
+                      <span className={`difficulty-tag diff-${algo.difficulty}`}>
+                        {{ easy: '简单', medium: '中等', hard: '困难' }[algo.difficulty] || algo.difficulty}
+                      </span>
                     </div>
-                  )}
-                </Link>
-              ))}
-            </div>
+                    {algo.description && (
+                      <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
+                        {algo.description.length > 120 ? algo.description.slice(0, 120) + '...' : algo.description}
+                      </p>
+                    )}
+                    {algo.tags && (
+                      <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {algo.tags.split(',').map((tag) => (
+                          <span key={tag} className="tag">{tag.trim()}</span>
+                        ))}
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+
+              {/* 分页控件 */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page <= 1}
+                    style={{ opacity: page <= 1 ? 0.5 : 1 }}
+                  >
+                    上一页
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      className={p === page ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+                      onClick={() => goToPage(p)}
+                      style={{ minWidth: 36 }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page >= totalPages}
+                    style={{ opacity: page >= totalPages ? 0.5 : 1 }}
+                  >
+                    下一页
+                  </button>
+                </div>
+              )}
+            </>
           )
         )}
       </section>

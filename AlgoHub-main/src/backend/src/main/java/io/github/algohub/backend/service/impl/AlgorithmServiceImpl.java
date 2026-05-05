@@ -1,12 +1,16 @@
 package io.github.algohub.backend.service.impl;
 
+import io.github.algohub.backend.common.PageResult;
 import io.github.algohub.backend.entity.Algorithm;
 import io.github.algohub.backend.entity.AlgorithmCategory;
 import io.github.algohub.backend.repository.AlgorithmCategoryRepository;
 import io.github.algohub.backend.repository.AlgorithmRepository;
 import io.github.algohub.backend.service.AlgorithmService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,9 +25,9 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     private AlgorithmRepository algorithmRepo;
 
     @Override
+    @Transactional(readOnly = true)
     public List<AlgorithmCategory> getCategoryTree() {
         List<AlgorithmCategory> roots = categoryRepo.findByParentIdIsNullOrderBySortOrderAsc();
-        // JPA懒加载会自动填充children（通过parent关联）
         return roots;
     }
 
@@ -38,22 +42,29 @@ public class AlgorithmServiceImpl implements AlgorithmService {
     }
 
     @Override
-    public List<Algorithm> searchAlgorithms(String keyword) {
+    public PageResult<Algorithm> searchAlgorithms(String keyword, int page, int pageSize) {
+        PageRequest pr = PageRequest.of(page - 1, pageSize);
+        Page<Algorithm> result;
         if (keyword == null || keyword.trim().isEmpty()) {
-            return algorithmRepo.findAll();
+            result = algorithmRepo.findAll(pr);
+        } else {
+            result = algorithmRepo.searchByKeyword(keyword.trim(), pr);
         }
-        String kw = keyword.trim();
-        return algorithmRepo.searchByKeyword(kw);
+        return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 
     @Override
-    public List<Algorithm> getAlgorithmsByCategory(Long categoryId) {
-        return algorithmRepo.findByCategoryIdOrderByCreateTimeAsc(categoryId);
+    public PageResult<Algorithm> getAlgorithmsByCategory(Long categoryId, int page, int pageSize) {
+        PageRequest pr = PageRequest.of(page - 1, pageSize);
+        Page<Algorithm> result = algorithmRepo.findByCategoryIdOrderByCreateTimeAsc(categoryId, pr);
+        return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 
     @Override
-    public List<Algorithm> getAlgorithmsByDifficulty(String difficulty) {
-        return algorithmRepo.findByDifficulty(difficulty);
+    public PageResult<Algorithm> getAlgorithmsByDifficulty(String difficulty, int page, int pageSize) {
+        PageRequest pr = PageRequest.of(page - 1, pageSize);
+        Page<Algorithm> result = algorithmRepo.findByDifficulty(difficulty, pr);
+        return new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
     }
 
     @Override
