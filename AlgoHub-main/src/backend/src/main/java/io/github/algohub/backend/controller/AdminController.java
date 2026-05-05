@@ -1,13 +1,15 @@
 package io.github.algohub.backend.controller;
 
+import io.github.algohub.backend.common.PageResult;
 import io.github.algohub.backend.common.Result;
 import io.github.algohub.backend.entity.User;
 import io.github.algohub.backend.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -36,13 +38,18 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public Result<?> listUsers(HttpServletRequest request) {
+    public Result<?> listUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            HttpServletRequest request) {
         if (!isAdminOrAbove(request)) {
             return Result.error(403, "无权限，仅管理员及以上可操作");
         }
-        List<User> users = userRepo.findAll();
-        users.forEach(u -> u.setPassword(null));
-        return Result.success(users);
+        PageRequest pr = PageRequest.of(page - 1, pageSize);
+        Page<User> result = userRepo.findAll(pr);
+        result.getContent().forEach(u -> u.setPassword(null));
+        PageResult<User> pageResult = new PageResult<>(result.getContent(), result.getTotalElements(), page, pageSize);
+        return Result.success(pageResult);
     }
 
     @PutMapping("/users/{id}/status")

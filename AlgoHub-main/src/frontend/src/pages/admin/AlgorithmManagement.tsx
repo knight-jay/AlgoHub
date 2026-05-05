@@ -3,11 +3,17 @@ import { adminApi } from '../../api/admin'
 import { algorithmApi } from '../../api/algorithm'
 import type { Algorithm, AlgorithmCategory } from '../../types'
 
+const PAGE_SIZE = 10
+
 export default function AlgorithmManagement() {
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([])
   const [categories, setCategories] = useState<AlgorithmCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   // 新建/编辑弹窗
   const [showModal, setShowModal] = useState(false)
@@ -17,18 +23,22 @@ export default function AlgorithmManagement() {
     categoryId: null, difficulty: 'medium', tags: '',
   })
 
-  const fetchData = () => {
+  const fetchData = (p: number) => {
     setLoading(true)
     Promise.all([
-      algorithmApi.search(''),
+      algorithmApi.search('', p, PAGE_SIZE),
       algorithmApi.getCategories(),
     ]).then(([algRes, catRes]) => {
-      if (algRes.data.code === 200) setAlgorithms(algRes.data.data.list)
+      if (algRes.data.code === 200) {
+        const d = algRes.data.data
+        setAlgorithms(d.list)
+        setTotal(d.total)
+      }
       if (catRes.data.code === 200) setCategories(catRes.data.data)
     }).finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchData(1) }, [])
 
   const openCreate = () => {
     setEditingId(null)
@@ -62,7 +72,7 @@ export default function AlgorithmManagement() {
       if (res.data.code === 200) {
         setMsg(editingId ? '修改成功' : '创建成功')
         setShowModal(false)
-        fetchData()
+        fetchData(page)
       } else {
         setMsg(res.data.msg)
       }
@@ -76,10 +86,16 @@ export default function AlgorithmManagement() {
     const res = await adminApi.deleteAlgorithm(id)
     if (res.data.code === 200) {
       setMsg('删除成功')
-      fetchData()
+      fetchData(page)
     } else {
       setMsg(res.data.msg)
     }
+  }
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === page) return
+    setPage(p)
+    fetchData(p)
   }
 
   // 递归收集所有分类
@@ -143,6 +159,28 @@ export default function AlgorithmManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* 分页 */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 20 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => goToPage(page - 1)} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.5 : 1 }}>
+            上一页
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              className={p === page ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => goToPage(p)}
+              style={{ minWidth: 36 }}
+            >
+              {p}
+            </button>
+          ))}
+          <button className="btn btn-secondary btn-sm" onClick={() => goToPage(page + 1)} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.5 : 1 }}>
+            下一页
+          </button>
+        </div>
+      )}
 
       {/* 新建/编辑弹窗 */}
       {showModal && (

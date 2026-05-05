@@ -1,10 +1,10 @@
 import client from './client'
-import type { Result, User, Algorithm, AlgorithmCategory } from '../types'
+import type { Result, User, Algorithm, AlgorithmCategory, PageResult } from '../types'
 
 export const adminApi = {
   // 用户管理
-  listUsers: () =>
-    client.get<Result<User[]>>('/admin/users'),
+  listUsers: (page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<User>>>('/admin/users', { params: { page, pageSize } }),
 
   toggleUserStatus: (id: number, locked: number) =>
     client.put<Result<string>>(`/admin/users/${id}/status`, { locked }),

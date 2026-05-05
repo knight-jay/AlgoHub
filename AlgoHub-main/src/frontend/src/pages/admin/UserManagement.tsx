@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { adminApi } from '../../api/admin'
 import type { User } from '../../types'
 
+const PAGE_SIZE = 10
+
 function roleLevel(role: string) {
   if (role === 'MASTER') return 3
   if (role === 'ADMIN') return 2
@@ -12,25 +14,33 @@ export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
   const currentRole: string = userInfo.role || ''
   const currentLevel = roleLevel(currentRole)
 
-  const fetchUsers = () => {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const fetchUsers = (p: number) => {
     setLoading(true)
-    adminApi.listUsers().then((res) => {
-      if (res.data.code === 200) setUsers(res.data.data)
+    adminApi.listUsers(p, PAGE_SIZE).then((res) => {
+      if (res.data.code === 200) {
+        const d = res.data.data
+        setUsers(d.list)
+        setTotal(d.total)
+      }
     }).finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchUsers() }, [])
+  useEffect(() => { fetchUsers(1) }, [])
 
   const toggleStatus = async (user: User) => {
     const newLocked = user.locked === 1 ? 0 : 1
     const res = await adminApi.toggleUserStatus(user.id, newLocked)
     if (res.data.code === 200) {
       setMsg(res.data.msg)
-      fetchUsers()
+      fetchUsers(page)
     } else {
       setMsg(res.data.msg)
     }
@@ -40,10 +50,16 @@ export default function UserManagement() {
     const res = await adminApi.changeUserRole(user.id, newRole)
     if (res.data.code === 200) {
       setMsg(res.data.msg)
-      fetchUsers()
+      fetchUsers(page)
     } else {
       setMsg(res.data.msg)
     }
+  }
+
+  const goToPage = (p: number) => {
+    if (p < 1 || p > totalPages || p === page) return
+    setPage(p)
+    fetchUsers(p)
   }
 
   if (loading) return <div className="loading">加载中...</div>
@@ -113,6 +129,28 @@ export default function UserManagement() {
           </tbody>
         </table>
       </div>
+
+      {/* 分页 */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 20 }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => goToPage(page - 1)} disabled={page <= 1} style={{ opacity: page <= 1 ? 0.5 : 1 }}>
+            上一页
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              className={p === page ? 'btn btn-primary btn-sm' : 'btn btn-secondary btn-sm'}
+              onClick={() => goToPage(p)}
+              style={{ minWidth: 36 }}
+            >
+              {p}
+            </button>
+          ))}
+          <button className="btn btn-secondary btn-sm" onClick={() => goToPage(page + 1)} disabled={page >= totalPages} style={{ opacity: page >= totalPages ? 0.5 : 1 }}>
+            下一页
+          </button>
+        </div>
+      )}
     </div>
   )
 }
