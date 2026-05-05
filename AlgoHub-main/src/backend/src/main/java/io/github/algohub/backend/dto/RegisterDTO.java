@@ -14,4 +14,6 @@ public class RegisterDTO {
     private String phone;
     // 新增角色字段
     private String role;
+    // 昵称
+    private String nickname;
 }
