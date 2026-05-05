@@ -18,32 +18,40 @@ export default function Home() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('')
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
+  const [error, setError] = useState('')
 
   const fetchAlgorithms = useCallback(async (categoryId: number | null, difficulty: string) => {
     setLoading(true)
+    setError('')
     try {
       if (categoryId) {
         const res = await algorithmApi.getByCategory(categoryId)
         if (res.data.code === 200) {
           setAlgorithms(res.data.data)
           setTotal(res.data.data.length)
+        } else {
+          setError(res.data.msg || '获取算法失败')
         }
       } else if (difficulty) {
         const res = await algorithmApi.getByDifficulty(difficulty)
         if (res.data.code === 200) {
           setAlgorithms(res.data.data)
           setTotal(res.data.data.length)
+        } else {
+          setError(res.data.msg || '获取算法失败')
         }
       } else {
-        // 默认搜索空关键词获取全部
         const res = await algorithmApi.search('')
         if (res.data.code === 200) {
           setAlgorithms(res.data.data.list)
           setTotal(res.data.data.total)
+        } else {
+          setError(res.data.msg || '搜索失败')
         }
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('API请求失败:', err)
+      setError('网络请求失败，请确认后端服务已启动')
     } finally {
       setLoading(false)
     }
@@ -57,14 +65,18 @@ export default function Home() {
     setSelectedCategory(null)
     setSelectedDifficulty('')
     setLoading(true)
+    setError('')
     try {
       const res = await algorithmApi.search(keyword.trim())
       if (res.data.code === 200) {
         setAlgorithms(res.data.data.list)
         setTotal(res.data.data.total)
+      } else {
+        setError(res.data.msg || '搜索失败')
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('搜索请求失败:', err)
+      setError('网络请求失败，请确认后端服务已启动')
     } finally {
       setLoading(false)
     }
@@ -85,11 +97,11 @@ export default function Home() {
   }
 
   useEffect(() => {
-    // 加载分类树
     algorithmApi.getCategories().then((res) => {
       if (res.data.code === 200) setCategories(res.data.data)
+    }).catch((err) => {
+      console.error('获取分类失败:', err)
     })
-    // 初始加载算法
     fetchAlgorithms(null, '')
   }, [fetchAlgorithms])
 
@@ -202,41 +214,48 @@ export default function Home() {
           <p style={{ fontSize: 14, color: '#888', marginBottom: 12 }}>共 {total} 个算法</p>
         )}
 
+        {/* 错误提示 */}
+        {error && (
+          <div className="empty" style={{ color: '#e74c3c' }}>{error}</div>
+        )}
+
         {/* 算法列表 */}
-        {loading ? (
-          <div className="loading">加载中...</div>
-        ) : algorithms.length === 0 ? (
-          <div className="empty">暂无算法数据</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {algorithms.map((algo) => (
-              <Link
-                key={algo.id}
-                to={`/algorithm/${algo.id}`}
-                className="card"
-                style={{ textDecoration: 'none', color: 'inherit', padding: 20, transition: 'box-shadow 0.2s' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <h3 style={{ fontSize: 17, color: '#333' }}>{algo.title}</h3>
-                  <span className={`difficulty-tag diff-${algo.difficulty}`}>
-                    {{ easy: '简单', medium: '中等', hard: '困难' }[algo.difficulty] || algo.difficulty}
-                  </span>
-                </div>
-                {algo.description && (
-                  <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
-                    {algo.description.length > 120 ? algo.description.slice(0, 120) + '...' : algo.description}
-                  </p>
-                )}
-                {algo.tags && (
-                  <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {algo.tags.split(',').map((tag) => (
-                      <span key={tag} className="tag">{tag.trim()}</span>
-                    ))}
+        {!error && (
+          loading ? (
+            <div className="loading">加载中...</div>
+          ) : algorithms.length === 0 ? (
+            <div className="empty">暂无算法数据，请先导入数据库初始化脚本</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {algorithms.map((algo) => (
+                <Link
+                  key={algo.id}
+                  to={`/algorithm/${algo.id}`}
+                  className="card"
+                  style={{ textDecoration: 'none', color: 'inherit', padding: 20, transition: 'box-shadow 0.2s' }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 17, color: '#333' }}>{algo.title}</h3>
+                    <span className={`difficulty-tag diff-${algo.difficulty}`}>
+                      {{ easy: '简单', medium: '中等', hard: '困难' }[algo.difficulty] || algo.difficulty}
+                    </span>
                   </div>
-                )}
-              </Link>
-            ))}
-          </div>
+                  {algo.description && (
+                    <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
+                      {algo.description.length > 120 ? algo.description.slice(0, 120) + '...' : algo.description}
+                    </p>
+                  )}
+                  {algo.tags && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {algo.tags.split(',').map((tag) => (
+                        <span key={tag} className="tag">{tag.trim()}</span>
+                      ))}
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )
         )}
       </section>
     </div>
