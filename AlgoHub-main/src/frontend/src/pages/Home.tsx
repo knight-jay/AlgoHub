@@ -19,6 +19,16 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState('')
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+
+  const toggleExpand = (id: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const fetchAlgorithms = useCallback(async (categoryId: number | null, difficulty: string) => {
     setLoading(true)
@@ -131,43 +141,62 @@ export default function Home() {
             >
               全部分类
             </li>
-            {categories.map((cat) => (
-              <li key={cat.id}>
-                <div
-                  onClick={() => handleCategoryClick(cat.id)}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    background: selectedCategory === cat.id ? 'rgba(102,126,234,0.1)' : 'transparent',
-                    color: selectedCategory === cat.id ? '#667eea' : '#555',
-                    fontWeight: selectedCategory === cat.id ? 600 : 400,
-                    marginBottom: 4,
-                  }}
-                >
-                  {cat.name}
-                </div>
-                {cat.children?.map((child) => (
+            {categories.map((cat) => {
+              const hasChildren = cat.children && cat.children.length > 0
+              const isExpanded = expandedIds.has(cat.id)
+              return (
+                <li key={cat.id}>
                   <div
-                    key={child.id}
-                    onClick={() => handleCategoryClick(child.id)}
+                    onClick={() => {
+                      if (hasChildren) {
+                        toggleExpand(cat.id)
+                      } else {
+                        handleCategoryClick(cat.id)
+                      }
+                    }}
                     style={{
-                      padding: '6px 12px 6px 28px',
+                      padding: '8px 12px',
                       borderRadius: 6,
                       cursor: 'pointer',
-                      fontSize: 13,
-                      background: selectedCategory === child.id ? 'rgba(102,126,234,0.1)' : 'transparent',
-                      color: selectedCategory === child.id ? '#667eea' : '#777',
-                      fontWeight: selectedCategory === child.id ? 600 : 400,
-                      marginBottom: 2,
+                      fontSize: 14,
+                      background: !hasChildren && selectedCategory === cat.id ? 'rgba(102,126,234,0.1)' : 'transparent',
+                      color: !hasChildren && selectedCategory === cat.id ? '#667eea' : '#555',
+                      fontWeight: !hasChildren && selectedCategory === cat.id ? 600 : 400,
+                      marginBottom: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
                     }}
                   >
-                    {child.name}
+                    <span>{cat.name}</span>
+                    {hasChildren && (
+                      <span style={{ fontSize: 12, color: '#999', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                        ▶
+                      </span>
+                    )}
                   </div>
-                ))}
-              </li>
-            ))}
+                  {hasChildren && isExpanded && cat.children!.map((child) => (
+                    <div
+                      key={child.id}
+                      onClick={() => handleCategoryClick(child.id)}
+                      style={{
+                        padding: '6px 12px 6px 28px',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        background: selectedCategory === child.id ? 'rgba(102,126,234,0.1)' : 'transparent',
+                        color: selectedCategory === child.id ? '#667eea' : '#777',
+                        fontWeight: selectedCategory === child.id ? 600 : 400,
+                        marginBottom: 2,
+                      }}
+                    >
+                      {child.name}
+                    </div>
+                  ))}
+                </li>
+              )
+            })}
           </ul>
         </div>
 
