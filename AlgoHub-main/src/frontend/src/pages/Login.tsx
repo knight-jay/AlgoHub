@@ -46,11 +46,7 @@ export default function Login() {
         localStorage.setItem('token', token)
         localStorage.setItem('userInfo', JSON.stringify(userInfo))
         const from = (location.state as { from?: { pathname: string } })?.from?.pathname
-        if (userInfo.role === 'ADMIN') {
-          navigate(from || '/admin/users')
-        } else {
-          navigate(from || '/')
-        }
+        navigate(from || '/')
       } else {
         setError(res.data.msg)
       }
