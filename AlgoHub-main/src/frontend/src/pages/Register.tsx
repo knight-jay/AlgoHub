@@ -4,7 +4,7 @@ import { userApi } from '../api/user'
 
 export default function Register() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '', phone: '', role: 'STUDENT' })
+  const [form, setForm] = useState({ username: '', password: '', confirmPassword: '', phone: '', nickname: '', role: 'STUDENT' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -89,6 +89,10 @@ export default function Register() {
           <div style={styles.formGroup}>
             <label style={styles.label}>手机号</label>
             <input style={styles.input} value={form.phone} onChange={update('phone')} placeholder="请输入手机号" required />
+          </div>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>昵称</label>
+            <input style={styles.input} value={form.nickname} onChange={update('nickname')} placeholder="请输入昵称" required />
           </div>
           <div style={styles.formGroup}>
             <label style={styles.label}>注册角色</label>

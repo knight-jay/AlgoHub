@@ -65,6 +65,7 @@ export interface RegisterData {
   password: string
   confirmPassword: string
   phone: string
+  nickname: string
   role: string
 }
 
