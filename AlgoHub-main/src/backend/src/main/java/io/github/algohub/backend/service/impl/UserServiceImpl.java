@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
         String password = dto.getPassword() == null ? "" : dto.getPassword().trim();
         String confirmPassword = dto.getConfirmPassword() == null ? "" : dto.getConfirmPassword().trim();
         String phone = dto.getPhone() == null ? "" : dto.getPhone().trim();
-        String role = dto.getRole() == null ? "STUDENT" : dto.getRole().trim().toUpperCase();
+        String role = "STUDENT"; // 注册时所有人默认学生
         String nickname = dto.getNickname() == null ? "" : dto.getNickname().trim();
 
         if (username.length() < 3 || username.length() > 20) {
@@ -56,10 +56,7 @@ public class UserServiceImpl implements UserService {
         if (userRepo.findByPhone(phone) != null) {
             return Result.error("手机号已被注册");
         }
-        if (!"STUDENT".equals(role) && !"ADMIN".equals(role)) {
-            return Result.error("角色只能是学生(STUDENT)或管理员(ADMIN)");
-        }
-
+        // 注册时所有用户角色固定为STUDENT，无需校验role字段
         String encryptedPwd = DigestUtils.md5DigestAsHex(password.getBytes());
         User user = new User();
         user.setUsername(username);
@@ -93,7 +90,8 @@ public class UserServiceImpl implements UserService {
             return Result.error("密码错误");
         }
         if (!user.getRole().equals(loginRole)) {
-            return Result.error("角色不匹配：当前账号是" + (user.getRole().equals("STUDENT") ? "学生" : "管理员") + "角色，请选择正确角色登录");
+            String roleName = "STUDENT".equals(user.getRole()) ? "学生" : "ADMIN".equals(user.getRole()) ? "管理员" : "群主";
+            return Result.error("角色不匹配：当前账号是" + roleName + "角色，请选择正确角色登录");
         }
 
         String token;
@@ -157,6 +155,34 @@ public class UserServiceImpl implements UserService {
         user.setUpdateTime(LocalDateTime.now());
         userRepo.save(user);
         return Result.success("个人信息更新成功");
+    }
+
+    @Override
+    public Result<String> resetPasswordByPhone(ForgotPasswordDTO dto) {
+        String phone = dto.getPhone() == null ? "" : dto.getPhone().trim();
+        String newPassword = dto.getNewPassword() == null ? "" : dto.getNewPassword().trim();
+        String confirmPassword = dto.getConfirmPassword() == null ? "" : dto.getConfirmPassword().trim();
+
+        if (!Pattern.matches("^\\d{11}$", phone)) {
+            return Result.error("手机号格式不正确");
+        }
+        User user = userRepo.findByPhone(phone);
+        if (user == null) {
+            return Result.error("该手机号未注册");
+        }
+        if (user.getLocked() == 1) {
+            return Result.error("该账号已被锁定，无法重置密码");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 20) {
+            return Result.error("新密码长度必须在6-20位之间");
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            return Result.error("两次输入的密码不一致");
+        }
+        user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
+        user.setUpdateTime(LocalDateTime.now());
+        userRepo.save(user);
+        return Result.success("密码重置成功");
     }
 
     @Override

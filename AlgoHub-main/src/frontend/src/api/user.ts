@@ -1,5 +1,5 @@
 import client from './client'
-import type { Result, User, LoginResponse, RegisterData, LoginData, UpdateProfileData, ChangePasswordData } from '../types'
+import type { Result, User, LoginResponse, RegisterData, LoginData, UpdateProfileData, ChangePasswordData, ForgotPasswordData } from '../types'
 
 export const userApi = {
   register: (data: RegisterData) =>
@@ -16,4 +16,7 @@ export const userApi = {
 
   changePassword: (data: ChangePasswordData) =>
     client.put<Result<string>>('/user/password', data),
+
+  forgotPassword: (data: ForgotPasswordData) =>
+    client.post<Result<string>>('/user/forgot-password', data),
 }

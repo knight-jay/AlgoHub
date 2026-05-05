@@ -19,6 +19,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     "/api/user/login",
                     "/api/user/register",
+                    "/api/user/forgot-password",
                     "/api/algorithm/**"          // 算法知识库公开浏览
                 );
     }

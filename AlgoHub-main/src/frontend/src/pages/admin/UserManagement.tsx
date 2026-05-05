@@ -2,10 +2,19 @@ import { useState, useEffect } from 'react'
 import { adminApi } from '../../api/admin'
 import type { User } from '../../types'
 
+function roleLevel(role: string) {
+  if (role === 'MASTER') return 3
+  if (role === 'ADMIN') return 2
+  return 1
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+  const currentRole: string = userInfo.role || ''
+  const currentLevel = roleLevel(currentRole)
 
   const fetchUsers = () => {
     setLoading(true)
@@ -60,33 +69,47 @@ export default function UserManagement() {
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
-              <tr key={u.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                <td style={td}>{u.id}</td>
-                <td style={td}>{u.username}</td>
-                <td style={td}>{u.phone}</td>
-                <td style={td}>
-                  <select value={u.role} onChange={(e) => changeRole(u, e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #e0e0e0', fontSize: 13 }}>
-                    <option value="STUDENT">学生</option>
-                    <option value="ADMIN">管理员</option>
-                  </select>
-                </td>
-                <td style={td}>
-                  <span style={{ color: u.locked === 1 ? '#e74c3c' : '#2ecc71', fontWeight: 500 }}>
-                    {u.locked === 1 ? '已禁用' : '正常'}
-                  </span>
-                </td>
-                <td style={td}>
-                  <button
-                    className={`btn btn-sm ${u.locked === 1 ? 'btn-primary' : 'btn-danger'}`}
-                    onClick={() => toggleStatus(u)}
-                  >
-                    {u.locked === 1 ? '启用' : '禁用'}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {users.map((u) => {
+              const targetLevel = roleLevel(u.role)
+              const canToggle = targetLevel < currentLevel
+              const canChangeRole = currentRole === 'MASTER' && targetLevel < currentLevel
+
+              return (
+                <tr key={u.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={td}>{u.id}</td>
+                  <td style={td}>{u.username}</td>
+                  <td style={td}>{u.phone}</td>
+                  <td style={td}>
+                    {canChangeRole ? (
+                      <select value={u.role} onChange={(e) => changeRole(u, e.target.value)}
+                        style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #e0e0e0', fontSize: 13 }}>
+                        <option value="STUDENT">学生</option>
+                        <option value="ADMIN">管理员</option>
+                      </select>
+                    ) : (
+                      <span style={{ color: '#555' }}>
+                        {u.role === 'MASTER' ? '群主' : u.role === 'ADMIN' ? '管理员' : '学生'}
+                      </span>
+                    )}
+                  </td>
+                  <td style={td}>
+                    <span style={{ color: u.locked === 1 ? '#e74c3c' : '#2ecc71', fontWeight: 500 }}>
+                      {u.locked === 1 ? '已禁用' : '正常'}
+                    </span>
+                  </td>
+                  <td style={td}>
+                    <button
+                      className={`btn btn-sm ${u.locked === 1 ? 'btn-primary' : 'btn-danger'}`}
+                      onClick={() => toggleStatus(u)}
+                      disabled={!canToggle}
+                      style={!canToggle ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                    >
+                      {u.locked === 1 ? '启用' : '禁用'}
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

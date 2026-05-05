@@ -42,7 +42,7 @@ export default function Layout() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {userInfo ? (
             <>
-              {userInfo.role === 'ADMIN' && (
+              {(userInfo.role === 'ADMIN' || userInfo.role === 'MASTER') && (
                 <Link to="/admin/users" style={{ color: '#ffd700', fontSize: 14, textDecoration: 'none' }}>
                   管理后台
                 </Link>

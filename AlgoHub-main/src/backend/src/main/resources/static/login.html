@@ -184,6 +184,10 @@
                         <input type="radio" name="role" id="roleAdmin" value="ADMIN">
                         管理员
                     </label>
+                    <label class="option-item">
+                        <input type="radio" name="role" id="roleMaster" value="MASTER">
+                        群主
+                    </label>
                 </div>
             </div>
 
@@ -203,21 +207,52 @@
         <div class="register-link">
             还没有账号？<a href="register.html">立即注册</a>
         </div>
+        <!-- 忘记密码 -->
+        <div style="text-align:center; margin-top:10px; font-size:14px; color:#666;">
+            <a href="#" id="forgotLink" style="color:#667eea; text-decoration:none;">忘记密码？</a>
+        </div>
+    </div>
+
+    <!-- 找回密码卡片（初始隐藏） -->
+    <div id="forgotCard" class="login-card" style="display:none;">
+        <h2 class="card-title">找回密码</h2>
+        <form id="forgotForm">
+            <div class="form-group">
+                <label class="form-label">注册手机号</label>
+                <input type="text" class="form-input" id="forgotPhone" placeholder="请输入注册时使用的手机号" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">新密码</label>
+                <input type="password" class="form-input" id="forgotNewPwd" placeholder="请输入6-20位新密码" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">确认新密码</label>
+                <input type="password" class="form-input" id="forgotConfirmPwd" placeholder="请再次输入新密码" required>
+            </div>
+            <button type="submit" class="login-btn">重置密码</button>
+        </form>
+        <div style="text-align:center; margin-top:25px; font-size:14px; color:#666;">
+            <a href="#" id="backToLogin" style="color:#667eea; text-decoration:none;">返回登录</a>
+        </div>
     </div>
 
     <script>
+        const loginCard = document.querySelector('.login-card');
+        const forgotCard = document.getElementById('forgotCard');
+
         // 页面加载：自动填充记住的账号+密码+角色
         window.onload = function () {
             const savedUsername = localStorage.getItem('username');
             const savedPassword = localStorage.getItem('password');
             const savedRole = localStorage.getItem('role');
-            
+
             if (savedUsername && savedPassword) {
                 document.getElementById('username').value = savedUsername;
                 document.getElementById('password').value = savedPassword;
                 document.getElementById('rememberMe').checked = true;
                 if (savedRole) {
-                    document.getElementById('role' + savedRole).checked = true;
+                    const el = document.getElementById('role' + savedRole);
+                    if (el) el.checked = true;
                 }
             }
         };
@@ -225,13 +260,12 @@
         // 登录表单提交
         document.getElementById('loginForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            
+
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const rememberMe = document.getElementById('rememberMe').checked;
             const role = document.querySelector('input[name="role"]:checked').value;
 
-            // 本地存储逻辑
             if (rememberMe) {
                 localStorage.setItem('username', username);
                 localStorage.setItem('password', password);
@@ -242,12 +276,11 @@
                 localStorage.removeItem('role');
             }
 
-            // 发送登录请求
             fetch('/api/user/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    username: username, 
+                body: JSON.stringify({
+                    username: username,
                     password: password,
                     rememberMe: rememberMe,
                     role: role
@@ -264,6 +297,54 @@
             })
             .catch(err => {
                 alert('网络异常，请检查后端是否启动！');
+            });
+        });
+
+        // 忘记密码：显示找回密码卡片
+        document.getElementById('forgotLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            loginCard.style.display = 'none';
+            forgotCard.style.display = 'block';
+        });
+
+        // 返回登录
+        document.getElementById('backToLogin').addEventListener('click', function(e) {
+            e.preventDefault();
+            forgotCard.style.display = 'none';
+            loginCard.style.display = 'block';
+        });
+
+        // 找回密码表单提交
+        document.getElementById('forgotForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const phone = document.getElementById('forgotPhone').value.trim();
+            const newPassword = document.getElementById('forgotNewPwd').value.trim();
+            const confirmPassword = document.getElementById('forgotConfirmPwd').value.trim();
+
+            fetch('/api/user/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    phone: phone,
+                    newPassword: newPassword,
+                    confirmPassword: confirmPassword
+                })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.code === 200) {
+                    alert('密码重置成功！请使用新密码登录');
+                    forgotCard.style.display = 'none';
+                    loginCard.style.display = 'block';
+                    document.getElementById('forgotPhone').value = '';
+                    document.getElementById('forgotNewPwd').value = '';
+                    document.getElementById('forgotConfirmPwd').value = '';
+                } else {
+                    alert(result.msg);
+                }
+            })
+            .catch(() => {
+                alert('网络错误，请稍后重试');
             });
         });
     </script>

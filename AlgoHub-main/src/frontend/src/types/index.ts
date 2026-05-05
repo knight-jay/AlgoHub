@@ -12,7 +12,7 @@ export interface User {
   phone: string
   nickname?: string
   intro?: string
-  role: 'STUDENT' | 'ADMIN'
+  role: 'STUDENT' | 'ADMIN' | 'MASTER'
   locked: number
   createTime: string
   updateTime: string
@@ -78,6 +78,13 @@ export interface LoginData {
 // 修改密码 DTO
 export interface ChangePasswordData {
   oldPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
+// 忘记密码 DTO
+export interface ForgotPasswordData {
+  phone: string
   newPassword: string
   confirmPassword: string
 }

@@ -10,4 +10,5 @@ public interface UserService {
     User getCurrentUser(Long userId);
     Result<String> updateProfile(Long userId, UpdateProfileDTO dto);
     Result<String> changePassword(Long userId, ChangePasswordDTO dto);
+    Result<String> resetPasswordByPhone(ForgotPasswordDTO dto);
 }

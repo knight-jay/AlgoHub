@@ -10,7 +10,7 @@ CREATE TABLE `users` (
     `phone` VARCHAR(11) NOT NULL COMMENT '手机号，唯一，11位数字',
     `nickname` VARCHAR(255) DEFAULT NULL COMMENT '昵称',
     `intro` VARCHAR(255) DEFAULT NULL COMMENT '个人简介',
-    `role` VARCHAR(20) NOT NULL DEFAULT 'STUDENT' COMMENT '角色：STUDENT / ADMIN',
+    `role` VARCHAR(20) NOT NULL DEFAULT 'STUDENT' COMMENT '角色：STUDENT / ADMIN /MASTER',
     `locked` INT(11) NOT NULL DEFAULT 0 COMMENT '锁定状态：0正常，1锁定',
     `create_time` DATETIME DEFAULT NULL COMMENT '创建时间',
     `update_time` DATETIME DEFAULT NULL COMMENT '更新时间',
@@ -22,5 +22,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`username`, `password`, `phone`, `nickname`, `intro`, `role`, `locked`, `create_time`, `update_time`) VALUES
 ('admin', 'e10adc3949ba59abbe56e057f20f883e', '11111111111', 'admin', '协助管理平台', 'ADMIN', 0, NOW(), NOW()),
-('student', 'e10adc3949ba59abbe56e057f20f883e', '22222222222', 'student', '热爱算法的学生', 'STUDENT', 0, NOW(), NOW());
+('student', 'e10adc3949ba59abbe56e057f20f883e', '22222222222', 'student', '热爱算法的学生', 'STUDENT', 0, NOW(), NOW()),
+('master', 'e10adc3949ba59abbe56e057f20f883e', '33333333333', 'master', '管理平台', 'MASTER', 0, NOW(), NOW());
+
 

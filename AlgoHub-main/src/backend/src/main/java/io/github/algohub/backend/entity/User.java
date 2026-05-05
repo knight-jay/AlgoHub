@@ -31,7 +31,7 @@ public class User {
     // 个人简介
     private String intro;
 
-    // 角色 STUDENT / ADMIN
+    // 角色 STUDENT / ADMIN / MASTER
     @Column(nullable = false)
     private String role = "STUDENT";
 

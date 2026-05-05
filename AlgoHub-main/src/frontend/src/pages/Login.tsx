@@ -11,6 +11,10 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotMode, setForgotMode] = useState(false)
+  const [forgotPhone, setForgotPhone] = useState('')
+  const [forgotNewPwd, setForgotNewPwd] = useState('')
+  const [forgotConfirmPwd, setForgotConfirmPwd] = useState('')
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username')
@@ -52,6 +56,34 @@ export default function Login() {
       }
     } catch {
       setError('网络异常，请检查后端是否启动')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (forgotNewPwd !== forgotConfirmPwd) {
+      setError('两次输入的密码不一致')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await userApi.forgotPassword({ phone: forgotPhone, newPassword: forgotNewPwd, confirmPassword: forgotConfirmPwd })
+      if (res.data.code === 200) {
+        alert('密码重置成功！请使用新密码登录')
+        setForgotMode(false)
+        setForgotPhone('')
+        setForgotNewPwd('')
+        setForgotConfirmPwd('')
+      } else {
+        setError(res.data.msg)
+      }
+    } catch {
+      setError('网络错误，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -111,6 +143,57 @@ export default function Login() {
     link: { textAlign: 'center' as const, marginTop: 25, fontSize: 14, color: '#666' },
   }
 
+  if (forgotMode) {
+    return (
+      <div style={styles.body}>
+        <div style={styles.card}>
+          <h2 style={styles.title}>找回密码</h2>
+          <form onSubmit={handleForgotPassword}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>注册手机号</label>
+              <input
+                style={styles.input}
+                value={forgotPhone}
+                onChange={(e) => setForgotPhone(e.target.value)}
+                placeholder="请输入注册时使用的手机号"
+                required
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>新密码</label>
+              <input
+                style={styles.input}
+                type="password"
+                value={forgotNewPwd}
+                onChange={(e) => setForgotNewPwd(e.target.value)}
+                placeholder="请输入6-20位新密码"
+                required
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>确认新密码</label>
+              <input
+                style={styles.input}
+                type="password"
+                value={forgotConfirmPwd}
+                onChange={(e) => setForgotConfirmPwd(e.target.value)}
+                placeholder="请再次输入新密码"
+                required
+              />
+            </div>
+            <button style={styles.btn} type="submit" disabled={loading}>
+              {loading ? '重置中...' : '重置密码'}
+            </button>
+            {error && <p style={styles.error}>{error}</p>}
+          </form>
+          <div style={styles.link}>
+            <span style={{ cursor: 'pointer', color: '#667eea' }} onClick={() => { setForgotMode(false); setError('') }}>返回登录</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={styles.body}>
       <div style={styles.card}>
@@ -148,6 +231,10 @@ export default function Login() {
                 <input type="radio" name="role" value="ADMIN" checked={role === 'ADMIN'} onChange={() => setRole('ADMIN')} />
                 管理员
               </label>
+              <label style={styles.optionItem}>
+                <input type="radio" name="role" value="MASTER" checked={role === 'MASTER'} onChange={() => setRole('MASTER')} />
+                群主
+              </label>
             </div>
           </div>
           <div style={styles.optionGroup}>
@@ -163,6 +250,9 @@ export default function Login() {
         </form>
         <div style={styles.link}>
           还没有账号？<Link to="/register">立即注册</Link>
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 10, fontSize: 14, color: '#666' }}>
+          <span style={{ cursor: 'pointer', color: '#667eea' }} onClick={() => setForgotMode(true)}>忘记密码？</span>
         </div>
       </div>
     </div>

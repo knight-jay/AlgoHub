@@ -47,4 +47,9 @@ public class UserController {
         Long userId = (Long) request.getAttribute("userId");
         return userService.changePassword(userId, dto);
     }
+
+    @PostMapping("/forgot-password")
+    public Result<String> forgotPassword(@RequestBody ForgotPasswordDTO dto) {
+        return userService.resetPasswordByPhone(dto);
+    }
 }

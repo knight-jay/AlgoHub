@@ -58,8 +58,6 @@ export default function Register() {
     formGroup: { marginBottom: 25 },
     label: { display: 'block', marginBottom: 8, fontSize: 15, color: '#555', fontWeight: 500 },
     input: { width: '100%', height: 46, padding: '0 15px', border: '1px solid #e0e0e0', borderRadius: 8, fontSize: 15, outline: 'none' },
-    roleGroup: { display: 'flex', alignItems: 'center', gap: 20, padding: '5px 0' },
-    roleItem: { display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 15, color: '#555' },
     btn: {
       width: '100%', height: 48,
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -93,19 +91,6 @@ export default function Register() {
           <div style={styles.formGroup}>
             <label style={styles.label}>昵称</label>
             <input style={styles.input} value={form.nickname} onChange={update('nickname')} placeholder="请输入昵称" required />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>注册角色</label>
-            <div style={styles.roleGroup}>
-              <label style={styles.roleItem}>
-                <input type="radio" name="role" value="STUDENT" checked={form.role === 'STUDENT'} onChange={update('role')} />
-                学生
-              </label>
-              <label style={styles.roleItem}>
-                <input type="radio" name="role" value="ADMIN" checked={form.role === 'ADMIN'} onChange={update('role')} />
-                管理员
-              </label>
-            </div>
           </div>
           <button style={styles.btn} type="submit" disabled={loading}>
             {loading ? '注册中...' : '立即注册'}

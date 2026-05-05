@@ -13,7 +13,7 @@ export default function AdminLayout() {
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
 
   useEffect(() => {
-    if (userInfo.role !== 'ADMIN') {
+    if (userInfo.role !== 'ADMIN' && userInfo.role !== 'MASTER') {
       navigate('/login')
     }
   }, [navigate, userInfo.role])
