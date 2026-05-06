@@ -1,23 +1,25 @@
 package io.github.algohub.backend.controller;
 
 import io.github.algohub.backend.common.Result;
-import io.github.algohub.backend.entity.Algorithm;
-import io.github.algohub.backend.entity.AlgorithmCategory;
-import io.github.algohub.backend.repository.AlgorithmCategoryRepository;
-import io.github.algohub.backend.service.AlgorithmService;
+import io.github.algohub.backend.entity.Resource;
+import io.github.algohub.backend.entity.ResourceCategory;
+import io.github.algohub.backend.repository.ResourceCategoryRepository;
+import io.github.algohub.backend.service.ResourceService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+
 @RestController
-@RequestMapping("/api/admin/algorithm")
-public class AlgorithmAdminController {
+@RequestMapping("/api/admin/resources")
+public class ResourceAdminController {
 
     @Autowired
-    private AlgorithmService algorithmService;
+    private ResourceService resourceService;
 
     @Autowired
-    private AlgorithmCategoryRepository categoryRepo;
+    private ResourceCategoryRepository categoryRepo;
 
     private boolean isAdmin(HttpServletRequest request) {
         String role = (String) request.getAttribute("role");
@@ -25,21 +27,21 @@ public class AlgorithmAdminController {
     }
 
     @PostMapping
-    public Result<Algorithm> create(@RequestBody Algorithm algorithm, HttpServletRequest request) {
+    public Result<Resource> create(@RequestBody Resource resource, HttpServletRequest request) {
         if (!isAdmin(request)) {
             return Result.error(403, "无权限，仅管理员可操作");
         }
-        return Result.success(algorithmService.saveAlgorithm(algorithm));
+        return Result.success(resourceService.saveResource(resource));
     }
 
     @PutMapping("/{id}")
-    public Result<Algorithm> update(@PathVariable Long id, @RequestBody Algorithm algorithm, HttpServletRequest request) {
+    public Result<Resource> update(@PathVariable Long id, @RequestBody Resource resource, HttpServletRequest request) {
         if (!isAdmin(request)) {
             return Result.error(403, "无权限，仅管理员可操作");
         }
-        Algorithm updated = algorithmService.updateAlgorithm(id, algorithm);
+        Resource updated = resourceService.updateResource(id, resource);
         if (updated == null) {
-            return Result.error("算法不存在");
+            return Result.error("资源不存在");
         }
         return Result.success(updated);
     }
@@ -49,29 +51,29 @@ public class AlgorithmAdminController {
         if (!isAdmin(request)) {
             return Result.error(403, "无权限，仅管理员可操作");
         }
-        algorithmService.deleteAlgorithm(id);
+        resourceService.deleteResource(id);
         return Result.success("删除成功");
     }
 
     @PostMapping("/category")
-    public Result<AlgorithmCategory> createCategory(@RequestBody AlgorithmCategory category, HttpServletRequest request) {
+    public Result<ResourceCategory> createCategory(@RequestBody ResourceCategory category, HttpServletRequest request) {
         if (!isAdmin(request)) {
             return Result.error(403, "无权限，仅管理员可操作");
         }
+        category.setCreateTime(LocalDateTime.now());
         return Result.success(categoryRepo.save(category));
     }
 
     @PutMapping("/category/{id}")
-    public Result<AlgorithmCategory> updateCategory(@PathVariable Long id, @RequestBody AlgorithmCategory category, HttpServletRequest request) {
+    public Result<ResourceCategory> updateCategory(@PathVariable Long id, @RequestBody ResourceCategory category, HttpServletRequest request) {
         if (!isAdmin(request)) {
             return Result.error(403, "无权限，仅管理员可操作");
         }
-        AlgorithmCategory exist = categoryRepo.findById(id).orElse(null);
+        ResourceCategory exist = categoryRepo.findById(id).orElse(null);
         if (exist == null) {
             return Result.error("分类不存在");
         }
         if (category.getName() != null) exist.setName(category.getName());
-        if (category.getParentId() != null) exist.setParentId(category.getParentId());
         if (category.getSortOrder() != null) exist.setSortOrder(category.getSortOrder());
         return Result.success(categoryRepo.save(exist));
     }

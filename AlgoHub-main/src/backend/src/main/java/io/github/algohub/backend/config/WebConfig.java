@@ -20,7 +20,8 @@ public class WebConfig implements WebMvcConfigurer {
                     "/api/user/login",
                     "/api/user/register",
                     "/api/user/forgot-password",
-                    "/api/algorithm/**"          // 算法知识库公开浏览
+                    "/api/algorithm/**",          // 算法知识库公开浏览
+                    "/api/resources/**"           // 学习资源公开浏览
                 );
     }
 }

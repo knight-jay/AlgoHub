@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"/d/信息系统/AlgoHub/AlgoHub-main\" log --oneline -20)"
+    ]
+  }
+}
