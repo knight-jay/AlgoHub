@@ -8,6 +8,7 @@ import io.github.algohub.backend.service.UserService;
 import io.github.algohub.backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ public class UserServiceImpl implements UserService {
     private JwtUtil jwtUtil;
 
     @Override
+    @Transactional
     public Result<String> register(RegisterDTO dto) {
         String username = dto.getUsername() == null ? "" : dto.getUsername().trim();
         String password = dto.getPassword() == null ? "" : dto.getPassword().trim();

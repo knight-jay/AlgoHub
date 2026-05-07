@@ -2,11 +2,11 @@ package io.github.algohub.backend.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +14,11 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    // 密钥（生产环境建议放到配置文件/配置中心）
-    private static final Key KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final SecretKey KEY;
+
+    public JwtUtil(@Value("${jwt.secret}") String secret) {
+        this.KEY = Keys.hmacShaKeyFor(secret.getBytes());
+    }
     
     // 默认有效期：24小时（不记住我）
     private static final long DEFAULT_EXPIRATION = 24 * 60 * 60 * 1000;

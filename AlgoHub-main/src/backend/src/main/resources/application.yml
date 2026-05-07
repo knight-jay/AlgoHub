@@ -8,3 +8,6 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
+
+jwt:
+  secret: AlgoHub2026SecretKeyForJwtHS256Algo!!!!
