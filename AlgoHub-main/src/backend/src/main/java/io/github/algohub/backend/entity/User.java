@@ -1,5 +1,6 @@
 package io.github.algohub.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public class User {
     private String username;
 
     // 加密密码
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

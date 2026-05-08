@@ -3,6 +3,138 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { postApi } from '../api/post'
 import type { Post, Comment } from '../types'
 
+// 递归评论组件，支持嵌套回复和评论举报
+function CommentItem({
+  comment,
+  allComments,
+  depth,
+  userInfo,
+  isPostAuthor,
+  replyTo,
+  onToggleReply,
+  replyText,
+  onReplyTextChange,
+  onSubmitReply,
+  onDeleteComment,
+  onReportComment,
+}: {
+  comment: Comment
+  allComments: Comment[]
+  depth: number
+  userInfo: { userId: number; username: string; role: string } | null
+  isPostAuthor: boolean
+  replyTo: number | null
+  onToggleReply: (id: number) => void
+  replyText: string
+  onReplyTextChange: (v: string) => void
+  onSubmitReply: () => void
+  onDeleteComment: (id: number) => void
+  onReportComment: (id: number) => void
+}) {
+  const children = allComments.filter((c) => c.parentId === comment.id)
+  const isOwn = userInfo && String(comment.userId) === String(userInfo.userId)
+  const parentComment = comment.parentId ? allComments.find((c) => c.id === comment.parentId) : null
+  const parentName = parentComment ? (parentComment.user?.nickname || parentComment.user?.username || ('用户#' + parentComment.userId)) : null
+  const displayName = comment.user?.nickname || comment.user?.username || ('用户#' + comment.userId)
+
+  return (
+    <div style={{ marginLeft: depth > 0 ? 24 : 0, marginTop: depth > 0 ? 12 : 0 }}>
+      {depth > 0 && (
+        <div style={{ padding: 12, background: '#f8f9fa', borderRadius: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span style={{ fontSize: 13, color: '#667eea' }}>
+              {displayName}
+              {parentName && <span style={{ color: '#999', marginLeft: 6 }}>回复 @{parentName}</span>}
+            </span>
+            <span style={{ fontSize: 12, color: '#999' }}>{comment.createTime}</span>
+          </div>
+          <p style={{ fontSize: 14, color: '#333', lineHeight: 1.6, whiteSpace: 'pre-wrap', marginBottom: 8 }}>{comment.content}</p>
+          {/* 按钮组 */}
+          <div style={{ display: 'flex', gap: 12 }}>
+            {userInfo && (
+              <button style={btnLink} onClick={() => onToggleReply(comment.id)}>💬 回复</button>
+            )}
+            {userInfo && !isOwn && (
+              <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
+            )}
+            {(isOwn || isPostAuthor) && (
+              <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
+            )}
+          </div>
+          {/* 回复框 */}
+          {replyTo === comment.id && (
+            <div style={{ marginTop: 12 }}>
+              <textarea className="form-input" rows={2} value={replyText}
+                onChange={(e) => onReplyTextChange(e.target.value)}
+                placeholder={`回复 @${displayName}`}
+              />
+              <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary btn-sm" onClick={onSubmitReply}>回复</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => onToggleReply(-1)}>取消</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {depth === 0 && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 13, color: '#667eea' }}>{displayName}</span>
+            <span style={{ fontSize: 12, color: '#999' }}>{comment.createTime}</span>
+          </div>
+          <p style={{ fontSize: 14, color: '#333', lineHeight: 1.6, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{comment.content}</p>
+          {/* 按钮组 */}
+          <div style={{ display: 'flex', gap: 12 }}>
+            {userInfo && (
+              <button style={btnLink} onClick={() => onToggleReply(comment.id)}>💬 回复</button>
+            )}
+            {userInfo && !isOwn && (
+              <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
+            )}
+            {(isOwn || isPostAuthor) && (
+              <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
+            )}
+          </div>
+          {/* 回复框 */}
+          {replyTo === comment.id && (
+            <div style={{ marginTop: 12, marginLeft: 24 }}>
+              <textarea className="form-input" rows={2} value={replyText}
+                onChange={(e) => onReplyTextChange(e.target.value)}
+                placeholder={`回复 @${displayName}`}
+              />
+              <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary btn-sm" onClick={onSubmitReply}>回复</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => onToggleReply(-1)}>取消</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 递归渲染子回复 */}
+      {children.map((child) => (
+        <CommentItem
+          key={child.id}
+          comment={child}
+          allComments={allComments}
+          depth={depth + 1}
+          userInfo={userInfo}
+          isPostAuthor={isPostAuthor}
+          replyTo={replyTo}
+          onToggleReply={onToggleReply}
+          replyText={replyText}
+          onReplyTextChange={onReplyTextChange}
+          onSubmitReply={onSubmitReply}
+          onDeleteComment={onDeleteComment}
+          onReportComment={onReportComment}
+        />
+      ))}
+    </div>
+  )
+}
+
+const btnLink: React.CSSProperties = { fontSize: 12, color: '#667eea', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }
+
 export default function PostDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -21,6 +153,7 @@ export default function PostDetail() {
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
+  const isPostAuthor = post && userInfo && String(post.userId) === String(userInfo.userId)
 
   const fetchPost = async () => {
     setLoading(true)
@@ -83,6 +216,15 @@ export default function PostDetail() {
     } catch { setMsg('举报失败') }
   }
 
+  const handleReportComment = async (commentId: number) => {
+    const reason = prompt('请输入举报原因：')
+    if (!reason) return
+    try {
+      const res = await postApi.reportComment(commentId, reason)
+      if (res.data.code === 200) setMsg(res.data.msg)
+    } catch { setMsg('举报失败') }
+  }
+
   const handleComment = async () => {
     if (!commentText.trim()) return
     try {
@@ -110,6 +252,16 @@ export default function PostDetail() {
         setMsg(res.data.msg)
       }
     } catch { setMsg('回复失败') }
+  }
+
+  const toggleReply = (commentId: number) => {
+    if (replyTo === commentId) {
+      setReplyTo(null)
+      setReplyText('')
+    } else {
+      setReplyTo(commentId)
+      setReplyText('')
+    }
   }
 
   const handleDeleteComment = async (commentId: number) => {
@@ -152,9 +304,7 @@ export default function PostDetail() {
     } catch { setMsg('编辑失败') }
   }
 
-  // 将评论按 parentId 组织成树形结构
   const topComments = comments.filter((c) => !c.parentId)
-  const replies = (parentId: number) => comments.filter((c) => c.parentId === parentId)
 
   if (loading) return <div className="loading">加载中...</div>
   if (!post) return <div className="empty">{msg || '帖子不存在'}</div>
@@ -175,7 +325,7 @@ export default function PostDetail() {
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>{post.title}</h2>
         <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16 }}>
-          <span>用户#{post.userId}</span>
+          <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
           <span>{post.createTime}</span>
           {post.updateTime !== post.createTime && <span>编辑于 {post.updateTime}</span>}
         </div>
@@ -188,8 +338,10 @@ export default function PostDetail() {
           <button className="btn btn-sm btn-primary" onClick={handleLike}>👍 点赞 {post.likeCount}</button>
           <button className="btn btn-sm btn-secondary" onClick={handleFavorite}>⭐ 收藏</button>
           <button className="btn btn-sm btn-secondary" onClick={handleFollowPost}>🔔 关注</button>
-          <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
-          {userInfo && String(post.userId) === String(userInfo.userId || '') && (
+          {userInfo && String(post.userId) !== String(userInfo.userId) && (
+            <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
+          )}
+          {userInfo && String(post.userId) === String(userInfo.userId) && (
             <>
               <button className="btn btn-sm btn-secondary" onClick={startEdit}>编辑</button>
               <button className="btn btn-sm btn-danger" onClick={handleDeletePost}>删除</button>
@@ -202,7 +354,6 @@ export default function PostDetail() {
       <div className="card" style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 16 }}>评论 ({comments.length})</h3>
 
-        {/* 发布评论 */}
         {userInfo ? (
           <div style={{ marginBottom: 20 }}>
             <textarea
@@ -222,71 +373,25 @@ export default function PostDetail() {
           </p>
         )}
 
-        {/* 评论列表 */}
         {topComments.length === 0 ? (
           <div className="empty" style={{ padding: 20, fontSize: 14 }}>暂无评论</div>
         ) : (
           topComments.map((c) => (
             <div key={c.id} style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: '#667eea' }}>用户#{c.userId}</span>
-                <span style={{ fontSize: 12, color: '#999' }}>{c.createTime}</span>
-              </div>
-              <p style={{ fontSize: 14, color: '#333', lineHeight: 1.6, marginBottom: 8, whiteSpace: 'pre-wrap' }}>{c.content}</p>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {userInfo && (
-                  <button
-                    style={{ fontSize: 12, color: '#667eea', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    onClick={() => setReplyTo(replyTo === c.id ? null : c.id)}
-                  >
-                    💬 回复
-                  </button>
-                )}
-                {userInfo && String(c.userId) === String(userInfo.userId || '') && (
-                  <button
-                    style={{ fontSize: 12, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    onClick={() => handleDeleteComment(c.id)}
-                  >
-                    删除
-                  </button>
-                )}
-              </div>
-
-              {/* 回复框 */}
-              {replyTo === c.id && (
-                <div style={{ marginTop: 12, marginLeft: 24 }}>
-                  <textarea
-                    className="form-input"
-                    rows={2}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="写下你的回复..."
-                  />
-                  <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    <button className="btn btn-primary btn-sm" onClick={handleReply}>回复</button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => { setReplyTo(null); setReplyText('') }}>取消</button>
-                  </div>
-                </div>
-              )}
-
-              {/* 子回复 */}
-              {replies(c.id).map((r) => (
-                <div key={r.id} style={{ marginLeft: 24, marginTop: 12, padding: 12, background: '#f8f9fa', borderRadius: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, color: '#667eea' }}>用户#{r.userId}</span>
-                    <span style={{ fontSize: 12, color: '#999' }}>{r.createTime}</span>
-                  </div>
-                  <p style={{ fontSize: 14, color: '#333', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{r.content}</p>
-                  {userInfo && String(r.userId) === String(userInfo.userId || '') && (
-                    <button
-                      style={{ fontSize: 12, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}
-                      onClick={() => handleDeleteComment(r.id)}
-                    >
-                      删除
-                    </button>
-                  )}
-                </div>
-              ))}
+              <CommentItem
+                comment={c}
+                allComments={comments}
+                depth={0}
+                userInfo={userInfo}
+                isPostAuthor={isPostAuthor}
+                replyTo={replyTo}
+                onToggleReply={toggleReply}
+                replyText={replyText}
+                onReplyTextChange={setReplyText}
+                onSubmitReply={handleReply}
+                onDeleteComment={handleDeleteComment}
+                onReportComment={handleReportComment}
+              />
             </div>
           ))
         )}

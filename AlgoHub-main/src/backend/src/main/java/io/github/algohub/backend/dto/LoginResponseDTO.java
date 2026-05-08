@@ -12,6 +12,7 @@ public class LoginResponseDTO {
     @Data
     @AllArgsConstructor
     public static class UserInfoDTO {
+        private Long userId;
         private String username;
         private String role;
     }

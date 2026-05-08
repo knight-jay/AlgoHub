@@ -148,7 +148,7 @@ export default function Community() {
                 {post.content.length > 150 ? post.content.slice(0, 150) + '...' : post.content}
               </p>
               <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999' }}>
-                <span>用户#{post.userId}</span>
+                <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
                 <span>{post.createTime}</span>
                 <span>👍 {post.likeCount}</span>
                 <span>💬 {post.commentCount}</span>

@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { adminPostApi } from '../../api/post'
 import type { PostReport } from '../../types'
 
 const PAGE_SIZE = 10
 
 export default function ReportManagement() {
+  const navigate = useNavigate()
   const [reports, setReports] = useState<PostReport[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'post' | 'comment'>('all')
   const [msg, setMsg] = useState('')
 
   const fetchReports = async (p = 1, status = statusFilter) => {
@@ -24,19 +27,6 @@ export default function ReportManagement() {
   }
 
   useEffect(() => { fetchReports() }, [])
-
-  const handleResolve = async (id: number) => {
-    if (!confirm('确定处理此举报并删除内容？')) return
-    try {
-      const res = await adminPostApi.resolveReport(id)
-      if (res.data.code === 200) {
-        setMsg('举报已处理，内容已删除')
-        fetchReports()
-      } else {
-        setMsg(res.data.msg)
-      }
-    } catch { setMsg('操作失败') }
-  }
 
   const handleDismiss = async (id: number) => {
     if (!confirm('确定驳回此举报？')) return
@@ -81,23 +71,46 @@ export default function ReportManagement() {
     return '#999'
   }
 
+  const getReportType = (r: PostReport): 'post' | 'comment' => r.commentId ? 'comment' : 'post'
+
+  const filteredReports = typeFilter === 'all'
+    ? reports
+    : reports.filter((r) => getReportType(r) === typeFilter)
+
   if (loading) return <div className="loading">加载中...</div>
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 600 }}>举报管理</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {['', 'PENDING', 'RESOLVED', 'DISMISSED'].map((s) => (
             <button
               key={s}
               className={`btn btn-sm ${statusFilter === s ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => { setStatusFilter(s); setPage(1); fetchReports(1, s) }}
             >
-              {s ? statusLabel(s) : '全部'}
+              {s ? statusLabel(s) : '全部状态'}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 类型筛选 */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {[
+          { key: 'all', label: '全部类型' },
+          { key: 'post', label: '帖子举报' },
+          { key: 'comment', label: '评论举报' },
+        ].map((t) => (
+          <button
+            key={t.key}
+            className={`btn btn-sm ${typeFilter === t.key ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setTypeFilter(t.key as typeof typeFilter)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {msg && (
@@ -112,6 +125,7 @@ export default function ReportManagement() {
             <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e0e0e0' }}>
               <th style={th}>ID</th>
               <th style={th}>举报人</th>
+              <th style={th}>类型</th>
               <th style={th}>帖子ID</th>
               <th style={th}>评论ID</th>
               <th style={th}>原因</th>
@@ -121,11 +135,20 @@ export default function ReportManagement() {
             </tr>
           </thead>
           <tbody>
-            {reports.map((r) => (
+            {filteredReports.map((r) => (
               <tr key={r.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                 <td style={td}>{r.id}</td>
-                <td style={td}>#{r.reporterId}</td>
-                <td style={td}>{r.postId || '-'}</td>
+                <td style={td}>{r.reporter?.nickname || r.reporter?.username || ('#' + r.reporterId)}</td>
+                <td style={td}>
+                  <span style={{
+                    color: getReportType(r) === 'post' ? '#667eea' : '#e67e22',
+                    fontWeight: 500,
+                    fontSize: 13,
+                  }}>
+                    {getReportType(r) === 'post' ? '帖子举报' : '评论举报'}
+                  </span>
+                </td>
+                <td style={td}>{r.postId ? <button style={{ ...linkBtn }} onClick={() => navigate(`/community/${r.postId}`)}>{r.postId}</button> : '-'}</td>
                 <td style={td}>{r.commentId || '-'}</td>
                 <td style={{ ...td, maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.reason || '-'}</td>
                 <td style={td}>
@@ -136,24 +159,31 @@ export default function ReportManagement() {
                   {r.status === 'PENDING' && (
                     <>
                       {r.postId && (
-                        <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleDeletePost(r.postId!)}>删帖</button>
+                        <>
+                          <button className="btn btn-primary btn-sm" style={{ marginRight: 8 }} onClick={() => navigate(`/community/${r.postId}`)}>查看</button>
+                          <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleDeletePost(r.postId!)}>删帖</button>
+                        </>
                       )}
                       {r.commentId && (
                         <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleDeleteComment(r.commentId!)}>删评</button>
                       )}
-                      <button className="btn btn-primary btn-sm" style={{ marginRight: 8 }} onClick={() => handleResolve(r.id)}>处理</button>
                       <button className="btn btn-secondary btn-sm" onClick={() => handleDismiss(r.id)}>驳回</button>
                     </>
                   )}
                   {r.status !== 'PENDING' && (
-                    <span style={{ fontSize: 12, color: '#999' }}>已{r.status === 'RESOLVED' ? '处理' : '驳回'}</span>
+                    <>
+                      {r.postId && (
+                        <button className="btn btn-primary btn-sm" style={{ marginRight: 8 }} onClick={() => navigate(`/community/${r.postId}`)}>查看</button>
+                      )}
+                      <span style={{ fontSize: 12, color: '#999' }}>已{r.status === 'RESOLVED' ? '处理' : '驳回'}</span>
+                    </>
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {reports.length === 0 && <div className="empty">暂无举报</div>}
+        {filteredReports.length === 0 && <div className="empty">{typeFilter !== 'all' ? '暂无该类型举报' : '暂无举报'}</div>}
       </div>
 
       {totalPages > 1 && (
@@ -169,3 +199,4 @@ export default function ReportManagement() {
 
 const th: React.CSSProperties = { textAlign: 'left', padding: '14px 16px', fontWeight: 600, color: '#555', fontSize: 13 }
 const td: React.CSSProperties = { padding: '10px 16px', color: '#333' }
+const linkBtn: React.CSSProperties = { color: '#667eea', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, textDecoration: 'underline' }

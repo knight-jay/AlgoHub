@@ -1,6 +1,5 @@
 package io.github.algohub.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -29,7 +28,6 @@ public class Comment {
     @Column(name = "create_time")
     private LocalDateTime createTime;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;

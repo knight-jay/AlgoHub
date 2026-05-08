@@ -21,6 +21,10 @@ public class PostReport {
     @Column(name = "reporter_id", nullable = false)
     private Long reporterId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reporter_id", insertable = false, updatable = false)
+    private User reporter;
+
     @Column(length = 200)
     private String reason;
 

@@ -1,5 +1,5 @@
 import client from './client'
-import type { Result, PageResult, Post, Comment, PostReport, CreatePostData, UpdatePostData, CreateCommentData } from '../types'
+import type { Result, PageResult, Post, Comment, PostReport, User, CreatePostData, UpdatePostData, CreateCommentData } from '../types'
 
 export const postApi = {
   // 帖子
@@ -57,6 +57,9 @@ export const postApi = {
   // 关注用户
   toggleFollowUser: (userId: number) =>
     client.post<Result<string>>(`/users/${userId}/follow`),
+
+  getFollowedUsers: (page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<User>>>('/users/following', { params: { page, pageSize } }),
 }
 
 export const adminPostApi = {

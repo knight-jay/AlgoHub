@@ -34,6 +34,8 @@ public class PostServiceImpl implements PostService {
     private UserFollowRepository userFollowRepo;
     @Autowired
     private PostReportRepository reportRepo;
+    @Autowired
+    private UserRepository userRepo;
 
     // ==================== 帖子 ====================
 
@@ -236,7 +238,9 @@ public class PostServiceImpl implements PostService {
     public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepo.findById(commentId).orElse(null);
         if (comment == null) return;
-        if (!comment.getUserId().equals(userId)) return;
+        // 允许评论作者或帖子作者删除评论
+        Post post = postRepo.findById(comment.getPostId()).orElse(null);
+        if (!comment.getUserId().equals(userId) && (post == null || !post.getUserId().equals(userId))) return;
         Long postId = comment.getPostId();
         commentRepo.delete(comment);
         postRepo.syncCommentCount(postId);
@@ -287,6 +291,27 @@ public class PostServiceImpl implements PostService {
             userFollowRepo.save(uf);
             return true;
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<User> getFollowedUsers(Long userId, int page, int pageSize) {
+        PageRequest pr = PageRequest.of(page - 1, pageSize);
+        Page<Long> ids = userFollowRepo.findFollowedUserIdsByFollowerId(userId, pr);
+        List<Long> idList = ids.getContent();
+        if (idList.isEmpty()) {
+            return new PageResult<>(List.of(), ids.getTotalElements(), page, pageSize);
+        }
+        List<User> users = userRepo.findAllById(idList);
+        for (User u : users) u.setPassword(null);
+        Map<Long, User> userMap = new java.util.HashMap<>();
+        for (User u : users) userMap.put(u.getId(), u);
+        List<User> ordered = new java.util.ArrayList<>();
+        for (Long id : idList) {
+            User u = userMap.get(id);
+            if (u != null) ordered.add(u);
+        }
+        return new PageResult<>(ordered, ids.getTotalElements(), page, pageSize);
     }
 
     // ==================== 管理员 ====================

@@ -7,6 +7,7 @@ import io.github.algohub.backend.dto.CreatePostDTO;
 import io.github.algohub.backend.dto.UpdatePostDTO;
 import io.github.algohub.backend.entity.Comment;
 import io.github.algohub.backend.entity.Post;
+import io.github.algohub.backend.entity.User;
 import io.github.algohub.backend.service.PostService;
 import io.github.algohub.backend.util.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -202,5 +203,14 @@ public class PostController {
         if (userId == null) return Result.error(401, "请先登录");
         boolean followed = postService.toggleFollowUser(id, userId);
         return Result.success(followed ? "已关注" : "已取消关注");
+    }
+
+    @GetMapping("/users/following")
+    public Result<PageResult<User>> getFollowing(HttpServletRequest request,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        Long userId = requireLogin(request);
+        if (userId == null) return Result.error(401, "请先登录");
+        return Result.success(postService.getFollowedUsers(userId, page, pageSize));
     }
 }

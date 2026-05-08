@@ -4,6 +4,8 @@ import { userApi } from '../api/user'
 import { postApi } from '../api/post'
 import type { User, Post } from '../types'
 
+type TabKey = 'posts' | 'favorites' | 'following'
+
 export default function Profile() {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
@@ -18,17 +20,35 @@ export default function Profile() {
   const [pwdForm, setPwdForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
   const [pwdMsg, setPwdMsg] = useState('')
 
+  // Tab 切换
+  const [tab, setTab] = useState<TabKey>('posts')
+
   // 我的帖子
   const [posts, setPosts] = useState<Post[]>([])
   const [postsTotal, setPostsTotal] = useState(0)
   const [postsPage, setPostsPage] = useState(1)
   const [postsLoading, setPostsLoading] = useState(true)
-  const [postMsg, setPostMsg] = useState('')
+
+  // 我的收藏
+  const [favPosts, setFavPosts] = useState<Post[]>([])
+  const [favTotal, setFavTotal] = useState(0)
+  const [favPage, setFavPage] = useState(1)
+  const [favLoading, setFavLoading] = useState(true)
+
+  // 关注的人
+  const [following, setFollowing] = useState<User[]>([])
+  const [followingTotal, setFollowingTotal] = useState(0)
+  const [followingPage, setFollowingPage] = useState(1)
+  const [followingLoading, setFollowingLoading] = useState(true)
+
+  const [msg, setMsg] = useState('')
 
   // 编辑帖子弹窗
   const [editingPost, setEditingPost] = useState<Post | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
+
+  const PAGE_SIZE = 5
 
   useEffect(() => {
     userApi.getProfile().then((res) => {
@@ -60,7 +80,6 @@ export default function Profile() {
       if (res.data.code === 200) {
         setEditMsg('保存成功')
         setEditing(false)
-        // 刷新
         const profileRes = await userApi.getProfile()
         if (profileRes.data.code === 200) setUser(profileRes.data.data)
       } else {
@@ -93,7 +112,7 @@ export default function Profile() {
   const fetchMyPosts = async (p = 1) => {
     setPostsLoading(true)
     try {
-      const res = await postApi.myPosts(p, 5)
+      const res = await postApi.myPosts(p, PAGE_SIZE)
       if (res.data.code === 200) {
         setPosts(res.data.data.list)
         setPostsTotal(res.data.data.total)
@@ -103,43 +122,80 @@ export default function Profile() {
     }
   }
 
+  const fetchFavorites = async (p = 1) => {
+    setFavLoading(true)
+    try {
+      const res = await postApi.myFavorites(p, PAGE_SIZE)
+      if (res.data.code === 200) {
+        setFavPosts(res.data.data.list)
+        setFavTotal(res.data.data.total)
+      }
+    } catch { /* ignore */ } finally {
+      setFavLoading(false)
+    }
+  }
+
+  const fetchFollowing = async (p = 1) => {
+    setFollowingLoading(true)
+    try {
+      const res = await postApi.getFollowedUsers(p, PAGE_SIZE)
+      if (res.data.code === 200) {
+        setFollowing(res.data.data.list)
+        setFollowingTotal(res.data.data.total)
+      }
+    } catch { /* ignore */ } finally {
+      setFollowingLoading(false)
+    }
+  }
+
   useEffect(() => {
-    if (user) fetchMyPosts()
+    if (user) {
+      fetchMyPosts()
+      fetchFavorites()
+      fetchFollowing()
+    }
   }, [user])
+
+  const switchTab = (t: TabKey) => {
+    setTab(t)
+    setMsg('')
+  }
 
   const handleDeletePost = async (postId: number) => {
     if (!confirm('确定删除此帖子？')) return
     try {
       await postApi.delete(postId)
-      setPostMsg('删除成功')
+      setMsg('删除成功')
       fetchMyPosts(postsPage)
-    } catch { setPostMsg('删除失败') }
+    } catch { setMsg('删除失败') }
   }
 
   const startEditPost = (post: Post) => {
     setEditingPost(post)
     setEditTitle(post.title)
     setEditContent(post.content)
-    setPostMsg('')
+    setMsg('')
   }
 
   const submitEditPost = async () => {
     if (!editingPost) return
-    if (!editTitle.trim()) { setPostMsg('标题不能为空'); return }
-    if (!editContent.trim()) { setPostMsg('内容不能为空'); return }
+    if (!editTitle.trim()) { setMsg('标题不能为空'); return }
+    if (!editContent.trim()) { setMsg('内容不能为空'); return }
     try {
       const res = await postApi.update(editingPost.id, { title: editTitle.trim(), content: editContent.trim() })
       if (res.data.code === 200) {
-        setPostMsg('编辑成功')
+        setMsg('编辑成功')
         setEditingPost(null)
         fetchMyPosts(postsPage)
       } else {
-        setPostMsg(res.data.msg)
+        setMsg(res.data.msg)
       }
-    } catch { setPostMsg('编辑失败') }
+    } catch { setMsg('编辑失败') }
   }
 
-  const postsTotalPages = Math.max(1, Math.ceil(postsTotal / 5))
+  const postsTotalPages = Math.max(1, Math.ceil(postsTotal / PAGE_SIZE))
+  const favTotalPages = Math.max(1, Math.ceil(favTotal / PAGE_SIZE))
+  const followingTotalPages = Math.max(1, Math.ceil(followingTotal / PAGE_SIZE))
 
   useEffect(() => {
     if (!loading && !user) {
@@ -149,6 +205,12 @@ export default function Profile() {
 
   if (loading) return <div className="loading">加载中...</div>
   if (!user) return null
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'posts', label: '我的帖子' },
+    { key: 'favorites', label: '我的收藏' },
+    { key: 'following', label: '关注的人' },
+  ]
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
@@ -199,7 +261,7 @@ export default function Profile() {
             </div>
             <div>
               <span style={{ color: '#999', fontSize: 13 }}>角色</span>
-              <p style={{ fontSize: 16, marginTop: 4 }}>{user.role === 'ADMIN' ? '管理员' : '学生'}</p>
+              <p style={{ fontSize: 16, marginTop: 4 }}>{user.role === 'ADMIN' ? '管理员' : user.role === 'MASTER' ? '群主' : '学生'}</p>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <span style={{ color: '#999', fontSize: 13 }}>个人简介</span>
@@ -210,7 +272,7 @@ export default function Profile() {
       </div>
 
       {/* 修改密码 */}
-      <div className="card">
+      <div className="card" style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>修改密码</h2>
         <form onSubmit={submitPassword}>
           <div style={{ display: 'grid', gap: 16 }}>
@@ -235,19 +297,30 @@ export default function Profile() {
         </form>
       </div>
 
-      {/* 我的帖子 */}
-      <div className="card" style={{ marginTop: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>我的帖子</h2>
-        {postMsg && (
-          <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 14, background: postMsg.includes('成功') ? '#d4edda' : '#f8d7da', color: postMsg.includes('成功') ? '#155724' : '#721c24' }}>
-            {postMsg}
+      {/* Tab 切换 */}
+      <div className="card">
+        <div style={{ display: 'flex', gap: 12, marginBottom: 24, borderBottom: '2px solid #f0f0f0', paddingBottom: 12 }}>
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`btn btn-sm ${tab === t.key ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => switchTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {msg && (
+          <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 14, background: msg.includes('成功') ? '#d4edda' : '#f8d7da', color: msg.includes('成功') ? '#155724' : '#721c24' }}>
+            {msg}
           </div>
         )}
-        {postsLoading ? (
-          <div className="loading">加载中...</div>
-        ) : posts.length === 0 ? (
-          <div className="empty">暂无帖子</div>
-        ) : (
+
+        {/* 我的帖子 */}
+        {tab === 'posts' && (
+          postsLoading ? <div className="loading">加载中...</div> :
+          posts.length === 0 ? <div className="empty">暂无帖子</div> :
           <>
             {posts.map((post) => (
               <div key={post.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
@@ -270,6 +343,59 @@ export default function Profile() {
                 <button className="btn btn-sm btn-secondary" disabled={postsPage === 1} onClick={() => { setPostsPage(postsPage - 1); fetchMyPosts(postsPage - 1) }}>上一页</button>
                 <span style={{ padding: '6px 12px', fontSize: 14, color: '#666' }}>{postsPage} / {postsTotalPages}</span>
                 <button className="btn btn-sm btn-secondary" disabled={postsPage === postsTotalPages} onClick={() => { setPostsPage(postsPage + 1); fetchMyPosts(postsPage + 1) }}>下一页</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 我的收藏 */}
+        {tab === 'favorites' && (
+          favLoading ? <div className="loading">加载中...</div> :
+          favPosts.length === 0 ? <div className="empty">暂无收藏</div> :
+          <>
+            {favPosts.map((post) => (
+              <div key={post.id} style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
+                <Link to={`/community/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <h4 style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>{post.title}</h4>
+                  <div style={{ fontSize: 12, color: '#999' }}>
+                    <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
+                    <span style={{ marginLeft: 12 }}>{post.createTime}</span>
+                    <span style={{ marginLeft: 12 }}>👍 {post.likeCount}</span>
+                    <span style={{ marginLeft: 8 }}>💬 {post.commentCount}</span>
+                  </div>
+                </Link>
+              </div>
+            ))}
+            {favTotalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+                <button className="btn btn-sm btn-secondary" disabled={favPage === 1} onClick={() => { setFavPage(favPage - 1); fetchFavorites(favPage - 1) }}>上一页</button>
+                <span style={{ padding: '6px 12px', fontSize: 14, color: '#666' }}>{favPage} / {favTotalPages}</span>
+                <button className="btn btn-sm btn-secondary" disabled={favPage === favTotalPages} onClick={() => { setFavPage(favPage + 1); fetchFavorites(favPage + 1) }}>下一页</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 关注的人 */}
+        {tab === 'following' && (
+          followingLoading ? <div className="loading">加载中...</div> :
+          following.length === 0 ? <div className="empty">暂无关注</div> :
+          <>
+            {following.map((u) => (
+              <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
+                <div>
+                  <span style={{ fontSize: 15, fontWeight: 500 }}>{u.nickname || u.username}</span>
+                  <span style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>@{u.username}</span>
+                  <span style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>{u.role === 'ADMIN' ? '管理员' : u.role === 'MASTER' ? '群主' : '学生'}</span>
+                </div>
+                {u.intro && <div style={{ fontSize: 13, color: '#666', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.intro}</div>}
+              </div>
+            ))}
+            {followingTotalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+                <button className="btn btn-sm btn-secondary" disabled={followingPage === 1} onClick={() => { setFollowingPage(followingPage - 1); fetchFollowing(followingPage - 1) }}>上一页</button>
+                <span style={{ padding: '6px 12px', fontSize: 14, color: '#666' }}>{followingPage} / {followingTotalPages}</span>
+                <button className="btn btn-sm btn-secondary" disabled={followingPage === followingTotalPages} onClick={() => { setFollowingPage(followingPage + 1); fetchFollowing(followingPage + 1) }}>下一页</button>
               </div>
             )}
           </>

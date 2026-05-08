@@ -37,6 +37,7 @@ public interface PostService {
 
     // 关注用户
     boolean toggleFollowUser(Long followedId, Long followerId);
+    PageResult<User> getFollowedUsers(Long userId, int page, int pageSize);
 
     // 管理员
     PageResult<PostReport> getReports(int page, int pageSize, String status);

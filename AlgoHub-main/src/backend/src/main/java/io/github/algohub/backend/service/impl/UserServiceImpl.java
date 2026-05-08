@@ -104,6 +104,7 @@ public class UserServiceImpl implements UserService {
         }
 
         LoginResponseDTO.UserInfoDTO userInfo = new LoginResponseDTO.UserInfoDTO(
+                user.getId(),
                 user.getUsername(),
                 user.getRole()
         );

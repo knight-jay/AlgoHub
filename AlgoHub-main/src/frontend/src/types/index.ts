@@ -30,6 +30,7 @@ export interface User {
 export interface LoginResponse {
   token: string
   userInfo: {
+    userId: number
     username: string
     role: string
   }
@@ -129,6 +130,11 @@ export interface Post {
   commentCount: number
   createTime: string
   updateTime: string
+  user?: {
+    id: number
+    username: string
+    nickname?: string
+  }
 }
 
 export interface Comment {
@@ -138,6 +144,11 @@ export interface Comment {
   parentId: number | null
   content: string
   createTime: string
+  user?: {
+    id: number
+    username: string
+    nickname?: string
+  }
 }
 
 export interface PostReport {
@@ -151,6 +162,11 @@ export interface PostReport {
   handleNote: string | null
   createTime: string
   handleTime: string | null
+  reporter?: {
+    id: number
+    username: string
+    nickname?: string
+  }
 }
 
 export interface CreatePostData {
