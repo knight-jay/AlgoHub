@@ -97,3 +97,73 @@ export interface UpdateProfileData {
   nickname?: string
   intro?: string
 }
+
+// ==================== 学习资源 ====================
+
+export interface ResourceCategory {
+  id: number
+  name: string
+  sortOrder: number
+  createTime: string
+}
+
+export interface Resource {
+  id: number
+  title: string
+  description?: string
+  url: string
+  categoryId: number | null
+  sortOrder: number
+  createTime: string
+  updateTime: string
+}
+
+// ==================== 问答社区 ====================
+
+export interface Post {
+  id: number
+  title: string
+  content: string
+  userId: number
+  likeCount: number
+  commentCount: number
+  createTime: string
+  updateTime: string
+}
+
+export interface Comment {
+  id: number
+  postId: number
+  userId: number
+  parentId: number | null
+  content: string
+  createTime: string
+}
+
+export interface PostReport {
+  id: number
+  postId: number | null
+  commentId: number | null
+  reporterId: number
+  reason: string
+  status: 'PENDING' | 'RESOLVED' | 'DISMISSED'
+  handlerId: number | null
+  handleNote: string | null
+  createTime: string
+  handleTime: string | null
+}
+
+export interface CreatePostData {
+  title: string
+  content: string
+}
+
+export interface UpdatePostData {
+  title?: string
+  content?: string
+}
+
+export interface CreateCommentData {
+  content: string
+  parentId?: number
+}
