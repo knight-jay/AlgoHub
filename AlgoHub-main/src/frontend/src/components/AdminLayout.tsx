@@ -5,6 +5,8 @@ const menuItems = [
   { path: '/admin/users', label: '用户管理' },
   { path: '/admin/algorithms', label: '算法管理' },
   { path: '/admin/categories', label: '分类管理' },
+  { path: '/admin/resources', label: '资源管理' },
+  { path: '/admin/reports', label: '举报管理' },
 ]
 
 export default function AdminLayout() {

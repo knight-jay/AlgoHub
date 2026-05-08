@@ -37,6 +37,12 @@ export default function Layout() {
             <Link to="/" style={{ color: '#fff', fontSize: 15, textDecoration: 'none', opacity: 0.9 }}>
               算法知识库
             </Link>
+            <Link to="/resources" style={{ color: '#fff', fontSize: 15, textDecoration: 'none', opacity: 0.9 }}>
+              学习资源
+            </Link>
+            <Link to="/community" style={{ color: '#fff', fontSize: 15, textDecoration: 'none', opacity: 0.9 }}>
+              问答社区
+            </Link>
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
