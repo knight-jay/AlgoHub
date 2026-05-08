@@ -14,6 +14,11 @@ export default function PostDetail() {
   const [replyText, setReplyText] = useState('')
   const [msg, setMsg] = useState('')
 
+  // 编辑帖子
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editContent, setEditContent] = useState('')
+
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
 
@@ -124,6 +129,29 @@ export default function PostDetail() {
     } catch { setMsg('删除失败') }
   }
 
+  const startEdit = () => {
+    if (!post) return
+    setEditTitle(post.title)
+    setEditContent(post.content)
+    setEditing(true)
+    setMsg('')
+  }
+
+  const submitEdit = async () => {
+    if (!editTitle.trim()) { setMsg('标题不能为空'); return }
+    if (!editContent.trim()) { setMsg('内容不能为空'); return }
+    try {
+      const res = await postApi.update(postId, { title: editTitle.trim(), content: editContent.trim() })
+      if (res.data.code === 200) {
+        setMsg('编辑成功')
+        setEditing(false)
+        fetchPost()
+      } else {
+        setMsg(res.data.msg)
+      }
+    } catch { setMsg('编辑失败') }
+  }
+
   // 将评论按 parentId 组织成树形结构
   const topComments = comments.filter((c) => !c.parentId)
   const replies = (parentId: number) => comments.filter((c) => c.parentId === parentId)
@@ -163,6 +191,7 @@ export default function PostDetail() {
           <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
           {userInfo && String(post.userId) === String(userInfo.userId || '') && (
             <>
+              <button className="btn btn-sm btn-secondary" onClick={startEdit}>编辑</button>
               <button className="btn btn-sm btn-danger" onClick={handleDeletePost}>删除</button>
             </>
           )}
@@ -262,6 +291,31 @@ export default function PostDetail() {
           ))
         )}
       </div>
+
+      {/* 编辑帖子弹窗 */}
+      {editing && (
+        <div className="modal-mask" onClick={() => setEditing(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">编辑帖子</h3>
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>标题 *</label>
+                <input className="form-input" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="请输入帖子标题" />
+              </div>
+              <div>
+                <label style={labelStyle}>内容 *</label>
+                <textarea className="form-input" rows={6} value={editContent} onChange={(e) => setEditContent(e.target.value)} placeholder="请输入帖子内容" />
+              </div>
+            </div>
+            <div style={{ marginTop: 24, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => setEditing(false)}>取消</button>
+              <button className="btn btn-primary" onClick={submitEdit}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+const labelStyle: React.CSSProperties = { display: 'block', marginBottom: 6, fontSize: 14, color: '#555', fontWeight: 500 }
