@@ -60,6 +60,13 @@ export const postApi = {
 
   getFollowedUsers: (page = 1, pageSize = 10) =>
     client.get<Result<PageResult<User>>>('/users/following', { params: { page, pageSize } }),
+
+  // 用户公开信息
+  getUserProfile: (userId: number) =>
+    client.get<Result<User>>(`/users/${userId}`),
+
+  getUserPosts: (userId: number, page = 1, pageSize = 10) =>
+    client.get<Result<PageResult<Post>>>(`/users/${userId}/posts`, { params: { page, pageSize } }),
 }
 
 export const adminPostApi = {

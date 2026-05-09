@@ -337,7 +337,7 @@ export default function PostDetail() {
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>{post.title}</h2>
         <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16, alignItems: 'center' }}>
-          <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
+          <Link to={`/user/${post.userId}`} style={{ color: '#667eea', textDecoration: 'none' }}>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</Link>
           <span>{post.createTime}</span>
           {post.updateTime !== post.createTime && <span>编辑于 {post.updateTime}</span>}
           {userInfo && String(post.userId) !== String(userInfo.userId) && (
