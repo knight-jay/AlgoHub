@@ -59,7 +59,7 @@ public class PostServiceImpl implements PostService {
         PageRequest pr = PageRequest.of(page - 1, pageSize);
         Page<Post> result;
         if (keyword == null || keyword.trim().isEmpty()) {
-            result = postRepo.findAllByOrderByCreateTimeDesc(pr);
+            return new PageResult<>(List.of(), 0, page, pageSize);
         } else {
             result = postRepo.searchByKeyword(keyword.trim(), pr);
         }
@@ -103,16 +103,17 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void deletePost(Long id, Long userId) {
+    public boolean deletePost(Long id, Long userId) {
         Post post = postRepo.findById(id).orElse(null);
-        if (post == null) return;
-        if (!post.getUserId().equals(userId)) return;
+        if (post == null) return false;
+        if (!post.getUserId().equals(userId)) return false;
         commentRepo.findByPostId(id).forEach(c -> commentRepo.delete(c));
         likeRepo.deleteByPostId(id);
         favRepo.deleteByPostId(id);
         followRepo.deleteByPostId(id);
         reportRepo.deleteByPostId(id);
         postRepo.delete(post);
+        return true;
     }
 
     @Override
@@ -151,8 +152,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleLike(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostLike existing = likeRepo.findByPostIdAndUserId(postId, userId);
-        if (!postRepo.existsById(postId)) return false;
         if (existing != null) {
             likeRepo.delete(existing);
             postRepo.decrementLikeCount(postId);
@@ -235,15 +236,16 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void deleteComment(Long commentId, Long userId) {
+    public boolean deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepo.findById(commentId).orElse(null);
-        if (comment == null) return;
+        if (comment == null) return false;
         // 允许评论作者或帖子作者删除评论
         Post post = postRepo.findById(comment.getPostId()).orElse(null);
-        if (!comment.getUserId().equals(userId) && (post == null || !post.getUserId().equals(userId))) return;
+        if (!comment.getUserId().equals(userId) && (post == null || !post.getUserId().equals(userId))) return false;
         Long postId = comment.getPostId();
         commentRepo.delete(comment);
         postRepo.syncCommentCount(postId);
+        return true;
     }
 
     // ==================== 举报 ====================

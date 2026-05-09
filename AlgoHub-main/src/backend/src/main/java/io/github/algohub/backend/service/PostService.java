@@ -13,7 +13,7 @@ public interface PostService {
     Post getPostDetail(Long id, Long currentUserId);
     Post createPost(CreatePostDTO dto, Long userId);
     Post updatePost(Long id, UpdatePostDTO dto, Long userId);
-    void deletePost(Long id, Long userId);
+    boolean deletePost(Long id, Long userId);
     PageResult<Post> getMyPosts(Long userId, int page, int pageSize);
     PageResult<Post> getMyFavorites(Long userId, int page, int pageSize);
 
@@ -29,7 +29,7 @@ public interface PostService {
     // 评论
     PageResult<Comment> getComments(Long postId, int page, int pageSize);
     Comment createComment(CreateCommentDTO dto, Long userId);
-    void deleteComment(Long commentId, Long userId);
+    boolean deleteComment(Long commentId, Long userId);
 
     // 举报
     void reportPost(Long postId, Long userId, String reason);

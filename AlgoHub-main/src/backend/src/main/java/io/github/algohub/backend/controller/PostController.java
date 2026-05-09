@@ -117,7 +117,8 @@ public class PostController {
     public Result<String> deletePost(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        postService.deletePost(id, userId);
+        boolean deleted = postService.deletePost(id, userId);
+        if (!deleted) return Result.error("帖子不存在或无权删除");
         return Result.success("删除成功");
     }
 
@@ -127,8 +128,12 @@ public class PostController {
     public Result<String> toggleLike(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean liked = postService.toggleLike(id, userId);
-        return Result.success(liked ? "已点赞" : "已取消点赞");
+        try {
+            boolean liked = postService.toggleLike(id, userId);
+            return Result.success(liked ? "已点赞" : "已取消点赞");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @PostMapping("/posts/{id}/favorite")
@@ -182,7 +187,8 @@ public class PostController {
     public Result<String> deleteComment(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        postService.deleteComment(id, userId);
+        boolean deleted = postService.deleteComment(id, userId);
+        if (!deleted) return Result.error("评论不存在或无权删除");
         return Result.success("删除成功");
     }
 
@@ -201,6 +207,7 @@ public class PostController {
     public Result<String> toggleFollowUser(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
+        if (id.equals(userId)) return Result.error("不能关注自己");
         boolean followed = postService.toggleFollowUser(id, userId);
         return Result.success(followed ? "已关注" : "已取消关注");
     }
