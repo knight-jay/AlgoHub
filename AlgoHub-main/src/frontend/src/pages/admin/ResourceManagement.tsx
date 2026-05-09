@@ -86,9 +86,17 @@ export default function ResourceManagement() {
 
   const deleteResource = async (id: number) => {
     if (!confirm('确定删除此资源？')) return
-    await adminResourceApi.deleteResource(id)
-    setMsg('删除成功')
-    fetchResources()
+    try {
+      const res = await adminResourceApi.deleteResource(id)
+      if (res.data.code === 200) {
+        setMsg('删除成功')
+        fetchResources()
+      } else {
+        setMsg(res.data.msg)
+      }
+    } catch {
+      setMsg('删除失败')
+    }
   }
 
   // 分类操作
@@ -125,9 +133,17 @@ export default function ResourceManagement() {
 
   const deleteCategory = async (id: number) => {
     if (!confirm('确定删除此分类？')) return
-    await adminResourceApi.deleteCategory(id)
-    setMsg('删除成功')
-    fetchCategories()
+    try {
+      const res = await adminResourceApi.deleteCategory(id)
+      if (res.data.code === 200) {
+        setMsg('删除成功')
+        fetchCategories()
+      } else {
+        setMsg(res.data.msg)
+      }
+    } catch {
+      setMsg('删除失败')
+    }
   }
 
   if (loading) return <div className="loading">加载中...</div>
