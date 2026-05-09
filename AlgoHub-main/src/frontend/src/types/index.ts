@@ -130,6 +130,9 @@ export interface Post {
   commentCount: number
   createTime: string
   updateTime: string
+  isLiked?: boolean
+  isFavorited?: boolean
+  isFollowed?: boolean
   user?: {
     id: number
     username: string

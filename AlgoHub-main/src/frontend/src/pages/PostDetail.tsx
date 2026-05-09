@@ -150,10 +150,9 @@ export default function PostDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
 
-  // 点赞/收藏/关注状态
+  // 点赞/收藏状态
   const [liked, setLiked] = useState(false)
   const [favorited, setFavorited] = useState(false)
-  const [followed, setFollowed] = useState(false)
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
@@ -163,7 +162,10 @@ export default function PostDetail() {
     try {
       const res = await postApi.getDetail(postId)
       if (res.data.code === 200) {
-        setPost(res.data.data)
+        const p = res.data.data
+        setPost(p)
+        setLiked(p.isLiked ?? false)
+        setFavorited(p.isFavorited ?? false)
       } else {
         setMsg(res.data.msg)
       }
@@ -205,16 +207,6 @@ export default function PostDetail() {
       if (res.data.code === 200) {
         setMsg(res.data.msg)
         setFavorited(!res.data.msg.includes('取消'))
-      }
-    } catch { setMsg('操作失败') }
-  }
-
-  const handleFollowPost = async () => {
-    try {
-      const res = await postApi.toggleFollowPost(postId)
-      if (res.data.code === 200) {
-        setMsg(res.data.msg)
-        setFollowed(!res.data.msg.includes('取消'))
       }
     } catch { setMsg('操作失败') }
   }
@@ -360,7 +352,6 @@ export default function PostDetail() {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
           <button className={`btn btn-sm ${liked ? 'btn-primary' : 'btn-secondary'}`} onClick={handleLike}>👍 {liked ? '已点赞' : '点赞'} {post.likeCount}</button>
           <button className={`btn btn-sm ${favorited ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFavorite}>⭐ {favorited ? '已收藏' : '收藏'}</button>
-          <button className={`btn btn-sm ${followed ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFollowPost}>🔔 {followed ? '已关注' : '关注'}</button>
           {userInfo && String(post.userId) !== String(userInfo.userId) && (
             <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
           )}

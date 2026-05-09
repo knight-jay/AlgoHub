@@ -37,4 +37,13 @@ public class Post {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
+
+    @Transient
+    private Boolean isLiked;
+
+    @Transient
+    private Boolean isFavorited;
+
+    @Transient
+    private Boolean isFollowed;
 }

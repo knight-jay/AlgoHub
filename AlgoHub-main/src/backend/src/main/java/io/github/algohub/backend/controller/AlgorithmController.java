@@ -38,7 +38,7 @@ public class AlgorithmController {
 
     @GetMapping("/search")
     public Result<PageResult<Algorithm>> search(
-            @RequestParam String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
         if (keyword.trim().isEmpty() && !keyword.isEmpty()) {

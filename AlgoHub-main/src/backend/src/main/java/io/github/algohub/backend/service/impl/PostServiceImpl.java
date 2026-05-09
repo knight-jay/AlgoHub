@@ -71,8 +71,15 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public Post getPostDetail(Long id, Long currentUserId) {
         Post post = postRepo.findById(id).orElse(null);
-        if (post != null && post.getUser() != null) {
-            post.getUser().setPassword(null);
+        if (post != null) {
+            if (post.getUser() != null) {
+                post.getUser().setPassword(null);
+            }
+            if (currentUserId != null) {
+                post.setIsLiked(likeRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsFavorited(favRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsFollowed(followRepo.existsByPostIdAndUserId(id, currentUserId));
+            }
         }
         return post;
     }
