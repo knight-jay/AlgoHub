@@ -77,8 +77,7 @@ export default function Home() {
 
   const handleSearch = async () => {
     if (!keyword.trim()) {
-      setPage(1)
-      fetchAlgorithms(null, '', 1)
+      setError('搜索关键字不能为空')
       return
     }
     setSelectedCategory(null)

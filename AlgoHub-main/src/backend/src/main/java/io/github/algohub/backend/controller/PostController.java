@@ -61,7 +61,7 @@ public class PostController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        if (keyword.trim().isEmpty() && !keyword.isEmpty()) {
+        if (keyword.trim().isEmpty()) {
             return Result.error("搜索关键字不能为空");
         }
         return Result.success(postService.searchPosts(keyword.trim(), page, pageSize));
@@ -222,5 +222,25 @@ public class PostController {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
         return Result.success(postService.getFollowedUsers(userId, page, pageSize));
+    }
+
+    @GetMapping("/users/{id}")
+    public Result<User> getUserProfile(@PathVariable Long id) {
+        User user = postService.getUserProfile(id);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        return Result.success(user);
+    }
+
+    @GetMapping("/users/{id}/posts")
+    public Result<PageResult<Post>> getUserPosts(@PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        User profile = postService.getUserProfile(id);
+        if (profile == null) {
+            return Result.error("用户不存在");
+        }
+        return Result.success(postService.getUserPosts(id, page, pageSize));
     }
 }
