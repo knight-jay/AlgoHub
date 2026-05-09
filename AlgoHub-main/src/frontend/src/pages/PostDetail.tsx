@@ -150,6 +150,11 @@ export default function PostDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
 
+  // 点赞/收藏/关注状态
+  const [liked, setLiked] = useState(false)
+  const [favorited, setFavorited] = useState(false)
+  const [followed, setFollowed] = useState(false)
+
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
 
@@ -186,22 +191,31 @@ export default function PostDetail() {
   const handleLike = async () => {
     try {
       const res = await postApi.toggleLike(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
-      fetchPost()
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        setLiked(!res.data.msg.includes('取消'))
+        fetchPost()
+      }
     } catch { setMsg('操作失败') }
   }
 
   const handleFavorite = async () => {
     try {
       const res = await postApi.toggleFavorite(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        setFavorited(!res.data.msg.includes('取消'))
+      }
     } catch { setMsg('操作失败') }
   }
 
   const handleFollowPost = async () => {
     try {
       const res = await postApi.toggleFollowPost(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        setFollowed(!res.data.msg.includes('取消'))
+      }
     } catch { setMsg('操作失败') }
   }
 
@@ -333,9 +347,9 @@ export default function PostDetail() {
 
         {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
-          <button className="btn btn-sm btn-primary" onClick={handleLike}>👍 点赞 {post.likeCount}</button>
-          <button className="btn btn-sm btn-secondary" onClick={handleFavorite}>⭐ 收藏</button>
-          <button className="btn btn-sm btn-secondary" onClick={handleFollowPost}>🔔 关注</button>
+          <button className={`btn btn-sm ${liked ? 'btn-primary' : 'btn-secondary'}`} onClick={handleLike}>👍 {liked ? '已点赞' : '点赞'} {post.likeCount}</button>
+          <button className={`btn btn-sm ${favorited ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFavorite}>⭐ {favorited ? '已收藏' : '收藏'}</button>
+          <button className={`btn btn-sm ${followed ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFollowPost}>🔔 {followed ? '已关注' : '关注'}</button>
           {userInfo && String(post.userId) !== String(userInfo.userId) && (
             <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
           )}
