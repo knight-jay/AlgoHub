@@ -1,5 +1,5 @@
 import client from './client'
-import type { Result, PageResult, Post, Comment, PostReport, User, CreatePostData, UpdatePostData, CreateCommentData } from '../types'
+import type { Result, PageResult, Post, Comment, PostReport, User, Resource, ResourceCategory, CreatePostData, UpdatePostData, CreateCommentData } from '../types'
 
 export const postApi = {
   // 帖子
@@ -81,19 +81,19 @@ export const adminPostApi = {
 
 export const adminResourceApi = {
   createResource: (data: { title: string; description?: string; url: string; categoryId: number | null; sortOrder?: number }) =>
-    client.post<Result<{ id: number }>>('/admin/resources', data),
+    client.post<Result<Resource>>('/admin/resources', data),
 
   updateResource: (id: number, data: { title?: string; description?: string; url?: string; categoryId?: number | null; sortOrder?: number }) =>
-    client.put<Result<{ id: number }>>(`/admin/resources/${id}`, data),
+    client.put<Result<Resource>>(`/admin/resources/${id}`, data),
 
   deleteResource: (id: number) =>
     client.delete<Result<string>>(`/admin/resources/${id}`),
 
   createCategory: (data: { name: string; sortOrder?: number }) =>
-    client.post<Result<{ id: number }>>('/admin/resources/category', data),
+    client.post<Result<ResourceCategory>>('/admin/resources/category', data),
 
   updateCategory: (id: number, data: { name?: string; sortOrder?: number }) =>
-    client.put<Result<{ id: number }>>(`/admin/resources/category/${id}`, data),
+    client.put<Result<ResourceCategory>>(`/admin/resources/category/${id}`, data),
 
   deleteCategory: (id: number) =>
     client.delete<Result<string>>(`/admin/resources/category/${id}`),

@@ -18,11 +18,9 @@ export default function Login() {
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username')
-    const savedPassword = localStorage.getItem('password')
     const savedRole = localStorage.getItem('role')
-    if (savedUsername && savedPassword) {
+    if (savedUsername) {
       setUsername(savedUsername)
-      setPassword(savedPassword)
       setRememberMe(true)
       if (savedRole) setRole(savedRole)
     }
@@ -35,11 +33,9 @@ export default function Login() {
 
     if (rememberMe) {
       localStorage.setItem('username', username)
-      localStorage.setItem('password', password)
       localStorage.setItem('role', role)
     } else {
       localStorage.removeItem('username')
-      localStorage.removeItem('password')
       localStorage.removeItem('role')
     }
 
