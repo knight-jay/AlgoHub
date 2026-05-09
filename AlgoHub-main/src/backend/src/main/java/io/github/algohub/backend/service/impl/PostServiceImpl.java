@@ -323,6 +323,24 @@ public class PostServiceImpl implements PostService {
         return new PageResult<>(ordered, ids.getTotalElements(), page, pageSize);
     }
 
+    // ==================== 查看用户公开信息 ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public User getUserProfile(Long userId) {
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null) {
+            user.setPassword(null);
+        }
+        return user;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<Post> getUserPosts(Long userId, int page, int pageSize) {
+        return getMyPosts(userId, page, pageSize);
+    }
+
     // ==================== 管理员 ====================
 
     @Override

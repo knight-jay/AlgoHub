@@ -9,6 +9,7 @@ export default function Resources() {
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [keyword, setKeyword] = useState('')
+  const [msg, setMsg] = useState('')
 
   const fetchResources = async (categoryId: number | null, kw = '') => {
     setLoading(true)
@@ -46,12 +47,13 @@ export default function Resources() {
   }
 
   const handleSearch = () => {
-    setSelectedCategory(null)
-    if (keyword.trim()) {
-      fetchResources(null, keyword.trim())
-    } else {
-      fetchResources(null)
+    if (!keyword.trim()) {
+      setMsg('搜索关键字不能为空')
+      return
     }
+    setMsg('')
+    setSelectedCategory(null)
+    fetchResources(null, keyword.trim())
   }
 
   return (
@@ -70,6 +72,12 @@ export default function Resources() {
         />
         <button className="btn btn-primary" onClick={handleSearch}>搜索</button>
       </div>
+
+      {msg && (
+        <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 14, background: '#f8d7da', color: '#721c24' }}>
+          {msg}
+        </div>
+      )}
 
       {/* 分类筛选 */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>

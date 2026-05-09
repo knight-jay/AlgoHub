@@ -24,7 +24,9 @@ public class WebConfig implements WebMvcConfigurer {
                     "/api/resources/**",          // 学习资源公开浏览
                     "/api/posts/**",              // 问答社区（GET公开，写操作Controller内校验）
                     "/api/comments/**",           // 评论（写操作Controller内校验）
-                    "/api/users/*/follow"         // 关注用户（Controller内校验）
+                    "/api/users/*/follow",         // 关注用户（Controller内校验）
+                    "/api/users/*",                // 查看用户公开信息
+                    "/api/users/*/posts"           // 查看用户帖子
                 );
     }
 }
