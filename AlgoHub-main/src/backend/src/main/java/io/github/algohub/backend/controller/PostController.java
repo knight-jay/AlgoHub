@@ -58,10 +58,13 @@ public class PostController {
 
     @GetMapping("/posts/search")
     public Result<PageResult<Post>> searchPosts(
-            @RequestParam String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.success(postService.searchPosts(keyword, page, pageSize));
+        if (keyword.trim().isEmpty() && !keyword.isEmpty()) {
+            return Result.error("搜索关键字不能为空");
+        }
+        return Result.success(postService.searchPosts(keyword.trim(), page, pageSize));
     }
 
     @GetMapping("/posts/my")

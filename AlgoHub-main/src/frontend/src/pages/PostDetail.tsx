@@ -228,6 +228,14 @@ export default function PostDetail() {
     } catch { setMsg('举报失败') }
   }
 
+  const handleFollowUser = async () => {
+    if (!post) return
+    try {
+      const res = await postApi.toggleFollowUser(post.userId)
+      if (res.data.code === 200) setMsg(res.data.msg)
+    } catch { setMsg('操作失败') }
+  }
+
   const handleReportComment = async (commentId: number) => {
     const reason = prompt('请输入举报原因：')
     if (!reason) return
@@ -336,10 +344,13 @@ export default function PostDetail() {
       {/* 帖子内容 */}
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>{post.title}</h2>
-        <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16, alignItems: 'center' }}>
           <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
           <span>{post.createTime}</span>
           {post.updateTime !== post.createTime && <span>编辑于 {post.updateTime}</span>}
+          {userInfo && String(post.userId) !== String(userInfo.userId) && (
+            <button className="btn btn-sm btn-secondary" onClick={handleFollowUser}>+ 关注</button>
+          )}
         </div>
         <div style={{ fontSize: 15, lineHeight: 1.8, color: '#333', whiteSpace: 'pre-wrap', marginBottom: 20 }}>
           {post.content}

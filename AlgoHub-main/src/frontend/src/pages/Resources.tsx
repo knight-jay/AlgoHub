@@ -8,13 +8,19 @@ export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
+  const [keyword, setKeyword] = useState('')
 
-  const fetchResources = async (categoryId: number | null) => {
+  const fetchResources = async (categoryId: number | null, kw = '') => {
     setLoading(true)
     try {
-      const res = categoryId
-        ? await resourceApi.getByCategory(categoryId)
-        : await resourceApi.search()
+      let res
+      if (kw.trim()) {
+        res = await resourceApi.search(kw.trim())
+      } else if (categoryId) {
+        res = await resourceApi.getByCategory(categoryId)
+      } else {
+        res = await resourceApi.search()
+      }
       if (res.data.code === 200) {
         setResources(res.data.data.list)
         setTotal(res.data.data.total)
@@ -35,12 +41,35 @@ export default function Resources() {
 
   const handleCategoryClick = (id: number | null) => {
     setSelectedCategory(id)
+    setKeyword('')
     fetchResources(id)
+  }
+
+  const handleSearch = () => {
+    setSelectedCategory(null)
+    if (keyword.trim()) {
+      fetchResources(null, keyword.trim())
+    } else {
+      fetchResources(null)
+    }
   }
 
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 24 }}>学习资源推荐</h2>
+
+      {/* 搜索栏 */}
+      <div className="card" style={{ display: 'flex', gap: 12, marginBottom: 20, padding: 16 }}>
+        <input
+          className="form-input"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+          placeholder="搜索学习资源..."
+          style={{ flex: 1 }}
+        />
+        <button className="btn btn-primary" onClick={handleSearch}>搜索</button>
+      </div>
 
       {/* 分类筛选 */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
