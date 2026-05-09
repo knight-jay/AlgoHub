@@ -22,7 +22,6 @@ function CommentItem({
   allComments: Comment[]
   depth: number
   userInfo: { userId: number; username: string; role: string } | null
-  isPostAuthor: boolean
   replyTo: number | null
   onToggleReply: (id: number) => void
   replyText: string
@@ -57,7 +56,7 @@ function CommentItem({
             {userInfo && !isOwn && (
               <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
             )}
-            {(isOwn || isPostAuthor) && (
+            {isOwn && (
               <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
             )}
           </div>
@@ -91,7 +90,7 @@ function CommentItem({
             {userInfo && !isOwn && (
               <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
             )}
-            {(isOwn || isPostAuthor) && (
+            {isOwn && (
               <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
             )}
           </div>
@@ -153,7 +152,6 @@ export default function PostDetail() {
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
-  const isPostAuthor = post && userInfo && String(post.userId) === String(userInfo.userId)
 
   const fetchPost = async () => {
     setLoading(true)
@@ -383,7 +381,6 @@ export default function PostDetail() {
                 allComments={comments}
                 depth={0}
                 userInfo={userInfo}
-                isPostAuthor={isPostAuthor}
                 replyTo={replyTo}
                 onToggleReply={toggleReply}
                 replyText={replyText}
