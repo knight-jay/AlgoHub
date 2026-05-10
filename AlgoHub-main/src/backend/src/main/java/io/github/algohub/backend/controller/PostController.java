@@ -143,16 +143,24 @@ public class PostController {
     public Result<String> toggleFavorite(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean faved = postService.toggleFavorite(id, userId);
-        return Result.success(faved ? "已收藏" : "已取消收藏");
+        try {
+            boolean faved = postService.toggleFavorite(id, userId);
+            return Result.success(faved ? "已收藏" : "已取消收藏");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @PostMapping("/posts/{id}/follow")
     public Result<String> toggleFollowPost(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean followed = postService.toggleFollowPost(id, userId);
-        return Result.success(followed ? "已关注" : "已取消关注");
+        try {
+            boolean followed = postService.toggleFollowPost(id, userId);
+            return Result.success(followed ? "已关注" : "已取消关注");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     // ==================== 举报 ====================

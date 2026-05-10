@@ -181,6 +181,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleFavorite(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostFavorite existing = favRepo.findByPostIdAndUserId(postId, userId);
         if (existing != null) {
             favRepo.delete(existing);
@@ -200,6 +201,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleFollowPost(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostFollow existing = followRepo.findByPostIdAndUserId(postId, userId);
         if (existing != null) {
             followRepo.delete(existing);
