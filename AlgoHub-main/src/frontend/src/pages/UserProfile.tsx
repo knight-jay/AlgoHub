@@ -24,7 +24,9 @@ export default function UserProfile() {
       postApi.getUserPosts(userId, 1, PAGE_SIZE),
     ]).then(([profileRes, postsRes]) => {
       if (profileRes.data.code === 200) {
-        setProfile(profileRes.data.data)
+        const p = profileRes.data.data
+        setProfile(p)
+        setFollowed(p.isFollowed ?? false)
       }
       if (postsRes.data.code === 200) {
         const d = postsRes.data.data
@@ -50,7 +52,7 @@ export default function UserProfile() {
     try {
       const res = await postApi.toggleFollowUser(userId)
       if (res.data.code === 200) {
-        setFollowed(!res.data.msg.includes('取消'))
+        setFollowed(res.data.msg === '已关注')
       }
     } catch { /* ignore */ }
   }

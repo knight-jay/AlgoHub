@@ -233,8 +233,9 @@ public class PostController {
     }
 
     @GetMapping("/users/{id}")
-    public Result<User> getUserProfile(@PathVariable Long id) {
-        User user = postService.getUserProfile(id);
+    public Result<User> getUserProfile(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getUserIdOrNull(request);
+        User user = postService.getUserProfile(id, currentUserId);
         if (user == null) {
             return Result.error("用户不存在");
         }
@@ -244,8 +245,10 @@ public class PostController {
     @GetMapping("/users/{id}/posts")
     public Result<PageResult<Post>> getUserPosts(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
-        User profile = postService.getUserProfile(id);
+            @RequestParam(defaultValue = "10") int pageSize,
+            HttpServletRequest request) {
+        Long currentUserId = getUserIdOrNull(request);
+        User profile = postService.getUserProfile(id, currentUserId);
         if (profile == null) {
             return Result.error("用户不存在");
         }

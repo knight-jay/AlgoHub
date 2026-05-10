@@ -330,10 +330,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public User getUserProfile(Long userId) {
+    public User getUserProfile(Long userId, Long currentUserId) {
         User user = userRepo.findById(userId).orElse(null);
         if (user != null) {
             user.setPassword(null);
+            if (currentUserId != null) {
+                user.setIsFollowed(userFollowRepo.existsByFollowerIdAndFollowedId(currentUserId, userId));
+            }
         }
         return user;
     }

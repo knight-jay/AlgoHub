@@ -24,6 +24,7 @@ export interface User {
   locked: number
   createTime: string
   updateTime: string
+  isFollowed?: boolean
 }
 
 // 登录响应

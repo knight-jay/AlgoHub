@@ -40,7 +40,7 @@ public interface PostService {
     PageResult<User> getFollowedUsers(Long userId, int page, int pageSize);
 
     // 查看用户公开信息
-    User getUserProfile(Long userId);
+    User getUserProfile(Long userId, Long currentUserId);
     PageResult<Post> getUserPosts(Long userId, int page, int pageSize);
 
     // 管理员
