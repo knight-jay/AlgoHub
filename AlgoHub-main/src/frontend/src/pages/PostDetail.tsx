@@ -208,7 +208,7 @@ export default function PostDetail() {
       const res = await postApi.toggleFavorite(postId)
       if (res.data.code === 200) {
         setMsg(res.data.msg)
-        setFavorited(!res.data.msg.includes('取消'))
+        fetchPost()
       }
     } catch { setMsg('操作失败') }
   }
@@ -228,7 +228,7 @@ export default function PostDetail() {
       const res = await postApi.toggleFollowUser(post.userId)
       if (res.data.code === 200) {
         setMsg(res.data.msg)
-        setUserFollowed(!res.data.msg.includes('取消'))
+        fetchPost()
       }
     } catch { setMsg('操作失败') }
   }
