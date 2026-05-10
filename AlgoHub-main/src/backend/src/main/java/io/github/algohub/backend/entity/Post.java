@@ -46,4 +46,7 @@ public class Post {
 
     @Transient
     private Boolean isFollowed;
+
+    @Transient
+    private Boolean isAuthorFollowed;
 }

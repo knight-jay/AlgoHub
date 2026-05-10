@@ -133,6 +133,7 @@ export interface Post {
   isLiked?: boolean
   isFavorited?: boolean
   isFollowed?: boolean
+  isAuthorFollowed?: boolean
   user?: {
     id: number
     username: string

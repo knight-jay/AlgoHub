@@ -79,6 +79,7 @@ public class PostServiceImpl implements PostService {
                 post.setIsLiked(likeRepo.existsByPostIdAndUserId(id, currentUserId));
                 post.setIsFavorited(favRepo.existsByPostIdAndUserId(id, currentUserId));
                 post.setIsFollowed(followRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsAuthorFollowed(userFollowRepo.existsByFollowerIdAndFollowedId(currentUserId, post.getUserId()));
             }
         }
         return post;

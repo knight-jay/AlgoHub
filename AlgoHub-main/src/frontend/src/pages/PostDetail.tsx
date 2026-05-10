@@ -150,9 +150,10 @@ export default function PostDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
 
-  // 点赞/收藏状态
+  // 点赞/收藏/关注用户状态
   const [liked, setLiked] = useState(false)
   const [favorited, setFavorited] = useState(false)
+  const [userFollowed, setUserFollowed] = useState(false)
 
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
@@ -166,6 +167,7 @@ export default function PostDetail() {
         setPost(p)
         setLiked(p.isLiked ?? false)
         setFavorited(p.isFavorited ?? false)
+        setUserFollowed(p.isAuthorFollowed ?? false)
       } else {
         setMsg(res.data.msg)
       }
@@ -224,7 +226,10 @@ export default function PostDetail() {
     if (!post) return
     try {
       const res = await postApi.toggleFollowUser(post.userId)
-      if (res.data.code === 200) setMsg(res.data.msg)
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        setUserFollowed(!res.data.msg.includes('取消'))
+      }
     } catch { setMsg('操作失败') }
   }
 
@@ -341,7 +346,9 @@ export default function PostDetail() {
           <span>{post.createTime}</span>
           {post.updateTime !== post.createTime && <span>编辑于 {post.updateTime}</span>}
           {userInfo && String(post.userId) !== String(userInfo.userId) && (
-            <button className="btn btn-sm btn-secondary" onClick={handleFollowUser}>+ 关注</button>
+            <button className={`btn btn-sm ${userFollowed ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFollowUser}>
+              {userFollowed ? '已关注' : '+ 关注'}
+            </button>
           )}
         </div>
         <div style={{ fontSize: 15, lineHeight: 1.8, color: '#333', whiteSpace: 'pre-wrap', marginBottom: 20 }}>
