@@ -52,7 +52,7 @@ export default function UserProfile() {
     try {
       const res = await postApi.toggleFollowUser(userId)
       if (res.data.code === 200) {
-        setFollowed(res.data.msg === '已关注')
+        setFollowed(res.data.data === '已关注')
       }
     } catch { /* ignore */ }
   }

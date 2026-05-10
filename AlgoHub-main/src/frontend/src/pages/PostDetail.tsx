@@ -196,8 +196,8 @@ export default function PostDetail() {
     try {
       const res = await postApi.toggleLike(postId)
       if (res.data.code === 200) {
-        setMsg(res.data.msg)
-        setLiked(!res.data.msg.includes('取消'))
+        setMsg(res.data.data)
+        setLiked(res.data.data === '已点赞')
         fetchPost()
       }
     } catch { setMsg('操作失败') }
