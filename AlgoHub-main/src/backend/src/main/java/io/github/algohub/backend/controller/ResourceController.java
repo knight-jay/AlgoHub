@@ -36,9 +36,6 @@ public class ResourceController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int pageSize) {
-        if (keyword.trim().isEmpty()) {
-            return Result.error("搜索关键字不能为空");
-        }
         return Result.success(resourceService.searchResources(keyword.trim(), page, pageSize));
     }
 

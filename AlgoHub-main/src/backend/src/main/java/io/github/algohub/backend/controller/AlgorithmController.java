@@ -41,9 +41,6 @@ public class AlgorithmController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        if (keyword.trim().isEmpty()) {
-            return Result.error("搜索关键字不能为空");
-        }
         return Result.success(algorithmService.searchAlgorithms(keyword.trim(), page, pageSize));
     }
 
