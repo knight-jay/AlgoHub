@@ -24,6 +24,7 @@ export interface User {
   locked: number
   createTime: string
   updateTime: string
+  isFollowed?: boolean
 }
 
 // 登录响应
@@ -130,6 +131,10 @@ export interface Post {
   commentCount: number
   createTime: string
   updateTime: string
+  isLiked?: boolean
+  isFavorited?: boolean
+  isFollowed?: boolean
+  isAuthorFollowed?: boolean
   user?: {
     id: number
     username: string

@@ -10,6 +10,7 @@ import Profile from './pages/Profile'
 import Resources from './pages/Resources'
 import Community from './pages/Community'
 import PostDetail from './pages/PostDetail'
+import UserProfile from './pages/UserProfile'
 import UserManagement from './pages/admin/UserManagement'
 import AlgorithmManagement from './pages/admin/AlgorithmManagement'
 import CategoryManagement from './pages/admin/CategoryManagement'
@@ -28,6 +29,7 @@ function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/community/:id" element={<PostDetail />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/user/:id" element={<UserProfile />} />
       </Route>
       <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
         <Route path="/admin/users" element={<UserManagement />} />

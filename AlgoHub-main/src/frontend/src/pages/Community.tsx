@@ -47,12 +47,12 @@ export default function Community() {
   }
 
   const handleSearch = () => {
-    setPage(1)
-    if (keyword.trim()) {
-      fetchPosts(1, sort, keyword.trim())
-    } else {
-      fetchPosts(1, sort, '')
+    if (!keyword.trim()) {
+      setMsg('搜索关键字不能为空')
+      return
     }
+    setPage(1)
+    fetchPosts(1, sort, keyword.trim())
   }
 
   const goToPage = (p: number) => {

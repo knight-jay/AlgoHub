@@ -41,24 +41,15 @@ export default function ReportManagement() {
     } catch { setMsg('操作失败') }
   }
 
-  const handleDeletePost = async (id: number) => {
-    if (!confirm('确定直接删除此帖子？')) return
+  const handleResolve = async (id: number) => {
+    if (!confirm('确定处理此举报？处理后将删除对应内容。')) return
     try {
-      const res = await adminPostApi.deletePost(id)
+      const res = await adminPostApi.resolveReport(id)
       if (res.data.code === 200) {
-        setMsg('帖子已删除')
+        setMsg('举报已处理，内容已删除')
         fetchReports()
-      }
-    } catch { setMsg('操作失败') }
-  }
-
-  const handleDeleteComment = async (id: number) => {
-    if (!confirm('确定直接删除此评论？')) return
-    try {
-      const res = await adminPostApi.deleteComment(id)
-      if (res.data.code === 200) {
-        setMsg('评论已删除')
-        fetchReports()
+      } else {
+        setMsg(res.data.msg)
       }
     } catch { setMsg('操作失败') }
   }
@@ -159,14 +150,9 @@ export default function ReportManagement() {
                   {r.status === 'PENDING' && (
                     <>
                       {r.postId && (
-                        <>
-                          <button className="btn btn-primary btn-sm" style={{ marginRight: 8 }} onClick={() => navigate(`/community/${r.postId}`)}>查看</button>
-                          <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleDeletePost(r.postId!)}>删帖</button>
-                        </>
+                        <button className="btn btn-primary btn-sm" style={{ marginRight: 8 }} onClick={() => navigate(`/community/${r.postId}`)}>查看</button>
                       )}
-                      {r.commentId && (
-                        <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleDeleteComment(r.commentId!)}>删评</button>
-                      )}
+                      <button className="btn btn-danger btn-sm" style={{ marginRight: 8 }} onClick={() => handleResolve(r.id)}>处理</button>
                       <button className="btn btn-secondary btn-sm" onClick={() => handleDismiss(r.id)}>驳回</button>
                     </>
                   )}

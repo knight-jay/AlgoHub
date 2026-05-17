@@ -58,10 +58,13 @@ public class PostController {
 
     @GetMapping("/posts/search")
     public Result<PageResult<Post>> searchPosts(
-            @RequestParam String keyword,
+            @RequestParam(defaultValue = "") String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize) {
-        return Result.success(postService.searchPosts(keyword, page, pageSize));
+        if (keyword.trim().isEmpty()) {
+            return Result.error("搜索关键字不能为空");
+        }
+        return Result.success(postService.searchPosts(keyword.trim(), page, pageSize));
     }
 
     @GetMapping("/posts/my")
@@ -117,7 +120,8 @@ public class PostController {
     public Result<String> deletePost(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        postService.deletePost(id, userId);
+        boolean deleted = postService.deletePost(id, userId);
+        if (!deleted) return Result.error("帖子不存在或无权删除");
         return Result.success("删除成功");
     }
 
@@ -127,24 +131,36 @@ public class PostController {
     public Result<String> toggleLike(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean liked = postService.toggleLike(id, userId);
-        return Result.success(liked ? "已点赞" : "已取消点赞");
+        try {
+            boolean liked = postService.toggleLike(id, userId);
+            return Result.success(liked ? "已点赞" : "已取消点赞");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @PostMapping("/posts/{id}/favorite")
     public Result<String> toggleFavorite(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean faved = postService.toggleFavorite(id, userId);
-        return Result.success(faved ? "已收藏" : "已取消收藏");
+        try {
+            boolean faved = postService.toggleFavorite(id, userId);
+            return Result.success(faved ? "已收藏" : "已取消收藏");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     @PostMapping("/posts/{id}/follow")
     public Result<String> toggleFollowPost(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        boolean followed = postService.toggleFollowPost(id, userId);
-        return Result.success(followed ? "已关注" : "已取消关注");
+        try {
+            boolean followed = postService.toggleFollowPost(id, userId);
+            return Result.success(followed ? "已关注" : "已取消关注");
+        } catch (IllegalArgumentException e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     // ==================== 举报 ====================
@@ -182,7 +198,8 @@ public class PostController {
     public Result<String> deleteComment(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
-        postService.deleteComment(id, userId);
+        boolean deleted = postService.deleteComment(id, userId);
+        if (!deleted) return Result.error("评论不存在或无权删除");
         return Result.success("删除成功");
     }
 
@@ -201,6 +218,7 @@ public class PostController {
     public Result<String> toggleFollowUser(@PathVariable Long id, HttpServletRequest request) {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
+        if (id.equals(userId)) return Result.error("不能关注自己");
         boolean followed = postService.toggleFollowUser(id, userId);
         return Result.success(followed ? "已关注" : "已取消关注");
     }
@@ -212,5 +230,28 @@ public class PostController {
         Long userId = requireLogin(request);
         if (userId == null) return Result.error(401, "请先登录");
         return Result.success(postService.getFollowedUsers(userId, page, pageSize));
+    }
+
+    @GetMapping("/users/{id}")
+    public Result<User> getUserProfile(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = getUserIdOrNull(request);
+        User user = postService.getUserProfile(id, currentUserId);
+        if (user == null) {
+            return Result.error("用户不存在");
+        }
+        return Result.success(user);
+    }
+
+    @GetMapping("/users/{id}/posts")
+    public Result<PageResult<Post>> getUserPosts(@PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            HttpServletRequest request) {
+        Long currentUserId = getUserIdOrNull(request);
+        User profile = postService.getUserProfile(id, currentUserId);
+        if (profile == null) {
+            return Result.error("用户不存在");
+        }
+        return Result.success(postService.getUserPosts(id, page, pageSize));
     }
 }

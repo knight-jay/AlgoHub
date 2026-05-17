@@ -18,11 +18,9 @@ export default function Login() {
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username')
-    const savedPassword = localStorage.getItem('password')
     const savedRole = localStorage.getItem('role')
-    if (savedUsername && savedPassword) {
+    if (savedUsername) {
       setUsername(savedUsername)
-      setPassword(savedPassword)
       setRememberMe(true)
       if (savedRole) setRole(savedRole)
     }
@@ -33,22 +31,20 @@ export default function Login() {
     setError('')
     setLoading(true)
 
-    if (rememberMe) {
-      localStorage.setItem('username', username)
-      localStorage.setItem('password', password)
-      localStorage.setItem('role', role)
-    } else {
-      localStorage.removeItem('username')
-      localStorage.removeItem('password')
-      localStorage.removeItem('role')
-    }
-
     try {
       const res = await userApi.login({ username, password, rememberMe, role })
       if (res.data.code === 200) {
         const { token, userInfo } = res.data.data
         localStorage.setItem('token', token)
         localStorage.setItem('userInfo', JSON.stringify(userInfo))
+
+        if (rememberMe) {
+          localStorage.setItem('username', username)
+          localStorage.setItem('role', userInfo.role)
+        } else {
+          localStorage.removeItem('username')
+          localStorage.removeItem('role')
+        }
         const from = (location.state as { from?: { pathname: string } })?.from?.pathname
         navigate(from || '/')
       } else {

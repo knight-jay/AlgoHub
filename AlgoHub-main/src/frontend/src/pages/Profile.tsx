@@ -354,16 +354,24 @@ export default function Profile() {
           favPosts.length === 0 ? <div className="empty">暂无收藏</div> :
           <>
             {favPosts.map((post) => (
-              <div key={post.id} style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
-                <Link to={`/community/${post.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div key={post.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
+                <Link to={`/community/${post.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1, minWidth: 0 }}>
                   <h4 style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>{post.title}</h4>
                   <div style={{ fontSize: 12, color: '#999' }}>
-                    <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
+                    <Link to={`/user/${post.userId}`} style={{ color: '#667eea', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</Link>
                     <span style={{ marginLeft: 12 }}>{post.createTime}</span>
                     <span style={{ marginLeft: 12 }}>👍 {post.likeCount}</span>
                     <span style={{ marginLeft: 8 }}>💬 {post.commentCount}</span>
                   </div>
                 </Link>
+                <button className="btn btn-sm btn-danger" style={{ marginLeft: 12, flexShrink: 0 }} onClick={async () => {
+                  if (!confirm('确定取消收藏？')) return
+                  try {
+                    await postApi.toggleFavorite(post.id)
+                    setMsg('已取消收藏')
+                    fetchFavorites(favPage)
+                  } catch { setMsg('操作失败') }
+                }}>取消收藏</button>
               </div>
             ))}
             {favTotalPages > 1 && (
@@ -383,12 +391,20 @@ export default function Profile() {
           <>
             {following.map((u) => (
               <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 16, paddingBottom: 16 }}>
-                <div>
-                  <span style={{ fontSize: 15, fontWeight: 500 }}>{u.nickname || u.username}</span>
+                <Link to={`/user/${u.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 15, fontWeight: 500, color: '#667eea' }}>{u.nickname || u.username}</span>
                   <span style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>@{u.username}</span>
                   <span style={{ marginLeft: 12, fontSize: 13, color: '#999' }}>{u.role === 'ADMIN' ? '管理员' : u.role === 'MASTER' ? '群主' : '学生'}</span>
-                </div>
-                {u.intro && <div style={{ fontSize: 13, color: '#666', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.intro}</div>}
+                  {u.intro && <span style={{ marginLeft: 16, fontSize: 13, color: '#666' }}>{u.intro}</span>}
+                </Link>
+                <button className="btn btn-sm btn-secondary" style={{ marginLeft: 12, flexShrink: 0 }} onClick={async () => {
+                  if (!confirm('确定取消关注？')) return
+                  try {
+                    await postApi.toggleFollowUser(u.id)
+                    setMsg('已取消关注')
+                    fetchFollowing(followingPage)
+                  } catch { setMsg('操作失败') }
+                }}>取消关注</button>
               </div>
             ))}
             {followingTotalPages > 1 && (

@@ -8,13 +8,20 @@ export default function Resources() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
+  const [keyword, setKeyword] = useState('')
+  const [msg, setMsg] = useState('')
 
-  const fetchResources = async (categoryId: number | null) => {
+  const fetchResources = async (categoryId: number | null, kw = '') => {
     setLoading(true)
     try {
-      const res = categoryId
-        ? await resourceApi.getByCategory(categoryId)
-        : await resourceApi.search()
+      let res
+      if (kw.trim()) {
+        res = await resourceApi.search(kw.trim())
+      } else if (categoryId) {
+        res = await resourceApi.getByCategory(categoryId)
+      } else {
+        res = await resourceApi.search()
+      }
       if (res.data.code === 200) {
         setResources(res.data.data.list)
         setTotal(res.data.data.total)
@@ -35,12 +42,42 @@ export default function Resources() {
 
   const handleCategoryClick = (id: number | null) => {
     setSelectedCategory(id)
+    setKeyword('')
     fetchResources(id)
+  }
+
+  const handleSearch = () => {
+    if (!keyword.trim()) {
+      setMsg('搜索关键字不能为空')
+      return
+    }
+    setMsg('')
+    setSelectedCategory(null)
+    fetchResources(null, keyword.trim())
   }
 
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 600, marginBottom: 24 }}>学习资源推荐</h2>
+
+      {/* 搜索栏 */}
+      <div className="card" style={{ display: 'flex', gap: 12, marginBottom: 20, padding: 16 }}>
+        <input
+          className="form-input"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+          placeholder="搜索学习资源..."
+          style={{ flex: 1 }}
+        />
+        <button className="btn btn-primary" onClick={handleSearch}>搜索</button>
+      </div>
+
+      {msg && (
+        <div style={{ padding: '10px 16px', borderRadius: 8, marginBottom: 16, fontSize: 14, background: '#f8d7da', color: '#721c24' }}>
+          {msg}
+        </div>
+      )}
 
       {/* 分类筛选 */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>

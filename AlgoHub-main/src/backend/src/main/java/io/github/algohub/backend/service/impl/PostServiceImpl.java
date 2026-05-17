@@ -59,7 +59,7 @@ public class PostServiceImpl implements PostService {
         PageRequest pr = PageRequest.of(page - 1, pageSize);
         Page<Post> result;
         if (keyword == null || keyword.trim().isEmpty()) {
-            result = postRepo.findAllByOrderByCreateTimeDesc(pr);
+            return new PageResult<>(List.of(), 0, page, pageSize);
         } else {
             result = postRepo.searchByKeyword(keyword.trim(), pr);
         }
@@ -71,8 +71,16 @@ public class PostServiceImpl implements PostService {
     @Transactional(readOnly = true)
     public Post getPostDetail(Long id, Long currentUserId) {
         Post post = postRepo.findById(id).orElse(null);
-        if (post != null && post.getUser() != null) {
-            post.getUser().setPassword(null);
+        if (post != null) {
+            if (post.getUser() != null) {
+                post.getUser().setPassword(null);
+            }
+            if (currentUserId != null) {
+                post.setIsLiked(likeRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsFavorited(favRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsFollowed(followRepo.existsByPostIdAndUserId(id, currentUserId));
+                post.setIsAuthorFollowed(userFollowRepo.existsByFollowerIdAndFollowedId(currentUserId, post.getUserId()));
+            }
         }
         return post;
     }
@@ -103,16 +111,17 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void deletePost(Long id, Long userId) {
+    public boolean deletePost(Long id, Long userId) {
         Post post = postRepo.findById(id).orElse(null);
-        if (post == null) return;
-        if (!post.getUserId().equals(userId)) return;
+        if (post == null) return false;
+        if (!post.getUserId().equals(userId)) return false;
         commentRepo.findByPostId(id).forEach(c -> commentRepo.delete(c));
         likeRepo.deleteByPostId(id);
         favRepo.deleteByPostId(id);
         followRepo.deleteByPostId(id);
         reportRepo.deleteByPostId(id);
         postRepo.delete(post);
+        return true;
     }
 
     @Override
@@ -151,8 +160,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleLike(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostLike existing = likeRepo.findByPostIdAndUserId(postId, userId);
-        if (!postRepo.existsById(postId)) return false;
         if (existing != null) {
             likeRepo.delete(existing);
             postRepo.decrementLikeCount(postId);
@@ -173,6 +182,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleFavorite(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostFavorite existing = favRepo.findByPostIdAndUserId(postId, userId);
         if (existing != null) {
             favRepo.delete(existing);
@@ -192,6 +202,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public boolean toggleFollowPost(Long postId, Long userId) {
+        if (!postRepo.existsById(postId)) throw new IllegalArgumentException("帖子不存在");
         PostFollow existing = followRepo.findByPostIdAndUserId(postId, userId);
         if (existing != null) {
             followRepo.delete(existing);
@@ -235,15 +246,16 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void deleteComment(Long commentId, Long userId) {
+    public boolean deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepo.findById(commentId).orElse(null);
-        if (comment == null) return;
+        if (comment == null) return false;
         // 允许评论作者或帖子作者删除评论
         Post post = postRepo.findById(comment.getPostId()).orElse(null);
-        if (!comment.getUserId().equals(userId) && (post == null || !post.getUserId().equals(userId))) return;
+        if (!comment.getUserId().equals(userId) && (post == null || !post.getUserId().equals(userId))) return false;
         Long postId = comment.getPostId();
         commentRepo.delete(comment);
         postRepo.syncCommentCount(postId);
+        return true;
     }
 
     // ==================== 举报 ====================
@@ -312,6 +324,27 @@ public class PostServiceImpl implements PostService {
             if (u != null) ordered.add(u);
         }
         return new PageResult<>(ordered, ids.getTotalElements(), page, pageSize);
+    }
+
+    // ==================== 查看用户公开信息 ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public User getUserProfile(Long userId, Long currentUserId) {
+        User user = userRepo.findById(userId).orElse(null);
+        if (user != null) {
+            user.setPassword(null);
+            if (currentUserId != null) {
+                user.setIsFollowed(userFollowRepo.existsByFollowerIdAndFollowedId(currentUserId, userId));
+            }
+        }
+        return user;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<Post> getUserPosts(Long userId, int page, int pageSize) {
+        return getMyPosts(userId, page, pageSize);
     }
 
     // ==================== 管理员 ====================

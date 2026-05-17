@@ -22,7 +22,6 @@ function CommentItem({
   allComments: Comment[]
   depth: number
   userInfo: { userId: number; username: string; role: string } | null
-  isPostAuthor: boolean
   replyTo: number | null
   onToggleReply: (id: number) => void
   replyText: string
@@ -57,7 +56,7 @@ function CommentItem({
             {userInfo && !isOwn && (
               <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
             )}
-            {(isOwn || isPostAuthor) && (
+            {isOwn && (
               <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
             )}
           </div>
@@ -91,7 +90,7 @@ function CommentItem({
             {userInfo && !isOwn && (
               <button style={{ ...btnLink, color: '#e67e22' }} onClick={() => onReportComment(comment.id)}>🚩 举报</button>
             )}
-            {(isOwn || isPostAuthor) && (
+            {isOwn && (
               <button style={{ ...btnLink, color: '#e74c3c' }} onClick={() => onDeleteComment(comment.id)}>删除</button>
             )}
           </div>
@@ -151,16 +150,24 @@ export default function PostDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editContent, setEditContent] = useState('')
 
+  // 点赞/收藏/关注用户状态
+  const [liked, setLiked] = useState(false)
+  const [favorited, setFavorited] = useState(false)
+  const [userFollowed, setUserFollowed] = useState(false)
+
   const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null')
   const postId = Number(id)
-  const isPostAuthor = post && userInfo && String(post.userId) === String(userInfo.userId)
 
   const fetchPost = async () => {
     setLoading(true)
     try {
       const res = await postApi.getDetail(postId)
       if (res.data.code === 200) {
-        setPost(res.data.data)
+        const p = res.data.data
+        setPost(p)
+        setLiked(p.isLiked ?? false)
+        setFavorited(p.isFavorited ?? false)
+        setUserFollowed(p.isAuthorFollowed ?? false)
       } else {
         setMsg(res.data.msg)
       }
@@ -188,22 +195,21 @@ export default function PostDetail() {
   const handleLike = async () => {
     try {
       const res = await postApi.toggleLike(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
-      fetchPost()
+      if (res.data.code === 200) {
+        setMsg(res.data.data)
+        setLiked(res.data.data === '已点赞')
+        fetchPost()
+      }
     } catch { setMsg('操作失败') }
   }
 
   const handleFavorite = async () => {
     try {
       const res = await postApi.toggleFavorite(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
-    } catch { setMsg('操作失败') }
-  }
-
-  const handleFollowPost = async () => {
-    try {
-      const res = await postApi.toggleFollowPost(postId)
-      if (res.data.code === 200) setMsg(res.data.msg)
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        fetchPost()
+      }
     } catch { setMsg('操作失败') }
   }
 
@@ -214,6 +220,17 @@ export default function PostDetail() {
       const res = await postApi.reportPost(postId, reason)
       if (res.data.code === 200) setMsg(res.data.msg)
     } catch { setMsg('举报失败') }
+  }
+
+  const handleFollowUser = async () => {
+    if (!post) return
+    try {
+      const res = await postApi.toggleFollowUser(post.userId)
+      if (res.data.code === 200) {
+        setMsg(res.data.msg)
+        fetchPost()
+      }
+    } catch { setMsg('操作失败') }
   }
 
   const handleReportComment = async (commentId: number) => {
@@ -324,10 +341,15 @@ export default function PostDetail() {
       {/* 帖子内容 */}
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>{post.title}</h2>
-        <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16 }}>
-          <span>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</span>
+        <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#999', marginBottom: 16, alignItems: 'center' }}>
+          <Link to={`/user/${post.userId}`} style={{ color: '#667eea', textDecoration: 'none' }}>{post.user?.nickname || post.user?.username || ('用户#' + post.userId)}</Link>
           <span>{post.createTime}</span>
           {post.updateTime !== post.createTime && <span>编辑于 {post.updateTime}</span>}
+          {userInfo && String(post.userId) !== String(userInfo.userId) && (
+            <button className={`btn btn-sm ${userFollowed ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFollowUser}>
+              {userFollowed ? '已关注' : '+ 关注'}
+            </button>
+          )}
         </div>
         <div style={{ fontSize: 15, lineHeight: 1.8, color: '#333', whiteSpace: 'pre-wrap', marginBottom: 20 }}>
           {post.content}
@@ -335,9 +357,8 @@ export default function PostDetail() {
 
         {/* 操作按钮 */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
-          <button className="btn btn-sm btn-primary" onClick={handleLike}>👍 点赞 {post.likeCount}</button>
-          <button className="btn btn-sm btn-secondary" onClick={handleFavorite}>⭐ 收藏</button>
-          <button className="btn btn-sm btn-secondary" onClick={handleFollowPost}>🔔 关注</button>
+          <button className={`btn btn-sm ${liked ? 'btn-primary' : 'btn-secondary'}`} onClick={handleLike}>👍 {liked ? '已点赞' : '点赞'} {post.likeCount}</button>
+          <button className={`btn btn-sm ${favorited ? 'btn-primary' : 'btn-secondary'}`} onClick={handleFavorite}>⭐ {favorited ? '已收藏' : '收藏'}</button>
           {userInfo && String(post.userId) !== String(userInfo.userId) && (
             <button className="btn btn-sm btn-secondary" onClick={handleReport}>🚩 举报</button>
           )}
@@ -383,7 +404,6 @@ export default function PostDetail() {
                 allComments={comments}
                 depth={0}
                 userInfo={userInfo}
-                isPostAuthor={isPostAuthor}
                 replyTo={replyTo}
                 onToggleReply={toggleReply}
                 replyText={replyText}
